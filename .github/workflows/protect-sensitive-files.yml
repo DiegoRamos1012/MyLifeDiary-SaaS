@@ -1,0 +1,71 @@
+name: Protect Sensitive Files
+
+on:
+  pull_request:
+    branches: ["**"]
+  push:
+    branches: ["**"]
+
+permissions:
+  contents: read
+
+jobs:
+  forbidden-files:
+    name: Block forbidden sensitive files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get changed files
+        id: changed
+        uses: tj-actions/changed-files@v45
+
+      - name: Validate changed files
+        shell: pwsh
+        run: |
+          $forbiddenPatterns = @(
+            '(^|/)\.env(\..*)?$',
+            '(^|/)application-local\.properties$',
+            '(^|/)application-.*\.local\.properties$',
+            '(^|/)application-secrets\.properties$',
+            '(^|/)application-.*\.secrets\.properties$',
+            '(^|/)id_rsa$',
+            '(^|/)id_dsa$',
+            '\.pem$',
+            '\.p12$',
+            '\.pfx$',
+            '\.jks$',
+            '\.keystore$',
+            '(^|/)secrets?\.(json|ya?ml|env)$',
+            '(^|/)credentials?\.(json|ya?ml)$'
+          )
+
+          $changedFiles = @()
+          if ("${{ steps.changed.outputs.all_changed_files }}") {
+            $changedFiles = "${{ steps.changed.outputs.all_changed_files }}" -split ' '
+          }
+
+          if ($changedFiles.Count -eq 0) {
+            Write-Host "No changed files detected."
+            exit 0
+          }
+
+          $blockedFiles = @()
+          foreach ($file in $changedFiles) {
+            foreach ($pattern in $forbiddenPatterns) {
+              if ($file -match $pattern) {
+                $blockedFiles += $file
+                break
+              }
+            }
+          }
+
+          if ($blockedFiles.Count -gt 0) {
+            Write-Error "Sensitive files detected in this commit/PR:"
+            $blockedFiles | Sort-Object -Unique | ForEach-Object { Write-Error " - $_" }
+            exit 1
+          }
+
+          Write-Host "No forbidden sensitive files found in changed files."
+
