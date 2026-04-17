@@ -10,6 +10,7 @@ import java.util.UUID;
 @Getter
 @MappedSuperclass
 public abstract class BaseEntity {
+
     @Id
     @GeneratedValue
     @Column(updatable = false, nullable = false)
