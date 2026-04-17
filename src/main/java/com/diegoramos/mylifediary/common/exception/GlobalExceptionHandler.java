@@ -16,25 +16,20 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleGenericException(Exception ex,
                                                                    HttpServletRequest request) {
-        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR,
-                "Erro interno do servidor",
-                "Ocorreu um erro inesperado.",
+        return buildResponse(
                 request);
     }
 
-    private ResponseEntity<ApiErrorResponse> buildResponse(HttpStatus status,
-                                                            String error,
-                                                            String message,
-                                                            HttpServletRequest request) {
+    private ResponseEntity<ApiErrorResponse> buildResponse(HttpServletRequest request) {
         ApiErrorResponse body = new ApiErrorResponse(
                 Instant.now(),
-                status.value(),
-                error,
-                message,
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "Erro interno do servidor",
+                "Ocorreu um erro inesperado.",
                 request.getRequestURI(),
                 List.of()
         );
 
-        return ResponseEntity.status(status).body(body);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
 }
