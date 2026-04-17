@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import java.util.List;
 
 /**
- * Configuração inicial do OpenAPI/Swagger para a API do TheLifeDiary.
+ * Configuração inicial do OpenAPI/Swagger para a API do MyLifeDiary.
  *
  * <p>Este bean centraliza os metadados da documentação e prepara a aplicação
  * para evoluir com autenticação, tags por módulo e ajustes de UI sem espalhar
@@ -27,8 +27,8 @@ public class SwaggerConfig {
     public OpenAPI openAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("TheLifeDiary API")
-                        .description("Documentação da API backend do TheLifeDiary")
+                        .title("MyLifeDiary API")
+                        .description("Documentação da API backend do MyLifeDiary")
                         .version("v1"))
                 .servers(List.of(new Server().url("/")));
     }
