@@ -1,13 +1,13 @@
 package com.diegoramos.mylifediary.modules.user.domain.entity;
 
 import com.diegoramos.mylifediary.common.base.BaseEntity;
+import com.diegoramos.mylifediary.common.result.Result;
 import com.diegoramos.mylifediary.modules.user.domain.enums.UserStatus;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -57,7 +57,50 @@ public class User extends BaseEntity {
         this.status = status;
     }
 
-    public static @NonNull User create(String email, String passwordHash, String fullName, LocalDate birthdayDate) {
-        return new User(email, passwordHash, fullName, birthdayDate, UserStatus.ACTIVE);
+    public static Result<User> create(String email, String passwordHash, String fullName, LocalDate birthdayDate) {
+        if (email == null || email.isBlank()) {
+            return Result.failure("INVALID_EMAIL", "Email inválido");
+        }
+        if (passwordHash == null || passwordHash.isBlank()) {
+            return Result.failure("INVALID_PASSWORD", "Senha inválida");
+        }
+        if (fullName == null || fullName.isBlank()) {
+            return Result.failure("INVALID_FULL_NAME", "Nome inválido");
+        }
+
+        return Result.success(new User(normalizeEmail(email), passwordHash, normalizeFullName(fullName), birthdayDate, UserStatus.ACTIVE));
+    }
+
+    public Result<User> updateEmail(String email) {
+        if (email == null || email.isBlank()) {
+            return Result.failure("INVALID_EMAIL", "Email inválido");
+        }
+        this.email = normalizeEmail(email);
+        return Result.success(this);
+    }
+
+    public Result<User> updatePassword(String passwordHash) {
+        if (passwordHash == null || passwordHash.isBlank()) {
+            return Result.failure("INVALID_PASSWORD", "Senha inválida");
+        }
+        this.passwordHash = passwordHash;
+        return Result.success(this);
+    }
+
+    public Result<User> updateProfile(String fullName, LocalDate birthdayDate) {
+        if (fullName == null || fullName.isBlank()) {
+            return Result.failure("INVALID_FULL_NAME", "Nome inválido");
+        }
+        this.fullName = normalizeFullName(fullName);
+        this.birthdayDate = birthdayDate;
+        return Result.success(this);
+    }
+
+    private static String normalizeEmail(String email) {
+        return email.trim().toLowerCase();
+    }
+
+    private static String normalizeFullName(String fullName) {
+        return fullName.trim();
     }
 }
