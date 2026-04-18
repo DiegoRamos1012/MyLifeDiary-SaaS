@@ -1,6 +1,7 @@
 package com.diegoramos.mylifediary.modules.user.domain.entity;
 
 import com.diegoramos.mylifediary.common.base.BaseEntity;
+import com.diegoramos.mylifediary.common.exception.DomainException;
 import com.diegoramos.mylifediary.common.result.Result;
 import com.diegoramos.mylifediary.modules.user.domain.enums.UserStatus;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -57,9 +58,9 @@ public class User extends BaseEntity {
         this.status = status;
     }
 
-    public static Result<User> create(String email, String passwordHash, String fullName, LocalDate birthdayDate) {
+    public static User create(String email, String passwordHash, String fullName, LocalDate birthdayDate) {
         if (email == null || email.isBlank()) {
-            return Result.failure("INVALID_EMAIL", "Email inválido");
+            throw new DomainException("O email não pode ser vazio");
         }
         if (passwordHash == null || passwordHash.isBlank()) {
             return Result.failure("INVALID_PASSWORD", "Senha inválida");
@@ -69,6 +70,14 @@ public class User extends BaseEntity {
         }
 
         return Result.success(new User(normalizeEmail(email), passwordHash, normalizeFullName(fullName), birthdayDate, UserStatus.ACTIVE));
+    }
+
+    private static String normalizeEmail(String email) {
+        return email.trim().toLowerCase();
+    }
+
+    private static String normalizeFullName(String fullName) {
+        return fullName.trim();
     }
 
     public Result<User> updateEmail(String email) {
@@ -94,13 +103,5 @@ public class User extends BaseEntity {
         this.fullName = normalizeFullName(fullName);
         this.birthdayDate = birthdayDate;
         return Result.success(this);
-    }
-
-    private static String normalizeEmail(String email) {
-        return email.trim().toLowerCase();
-    }
-
-    private static String normalizeFullName(String fullName) {
-        return fullName.trim();
     }
 }
