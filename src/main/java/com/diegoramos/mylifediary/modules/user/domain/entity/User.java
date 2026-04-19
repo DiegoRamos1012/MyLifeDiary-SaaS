@@ -60,16 +60,16 @@ public class User extends BaseEntity {
 
     public static User create(String email, String passwordHash, String fullName, LocalDate birthdayDate) {
         if (email == null || email.isBlank()) {
-            throw new DomainException("O email não pode ser vazio");
+            throw new DomainException("Erro:  não pode ser vazio");
         }
         if (passwordHash == null || passwordHash.isBlank()) {
-            return Result.failure("INVALID_PASSWORD", "Senha inválida");
+            throw new DomainException("Erro: Senha inválida");
         }
         if (fullName == null || fullName.isBlank()) {
-            return Result.failure("INVALID_FULL_NAME", "Nome inválido");
+            throw new DomainException("Erro: Nome não pode estar vazio");
         }
 
-        return Result.success(new User(normalizeEmail(email), passwordHash, normalizeFullName(fullName), birthdayDate, UserStatus.ACTIVE));
+        return new User(normalizeEmail(email), passwordHash, normalizeFullName(fullName), birthdayDate, UserStatus.ACTIVE);
     }
 
     private static String normalizeEmail(String email) {
