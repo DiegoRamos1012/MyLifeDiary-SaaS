@@ -8,6 +8,7 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.jspecify.annotations.NonNull;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -70,11 +71,11 @@ public class User extends BaseEntity {
         return new User(normalizeEmail(email), passwordHash, normalizeFullName(fullName), birthdayDate, UserStatus.ACTIVE);
     }
 
-    private static String normalizeEmail(String email) {
+    private static String normalizeEmail(@NonNull String email) {
         return email.trim().toLowerCase();
     }
 
-    private static String normalizeFullName(String fullName) {
+    private static String normalizeFullName(@NonNull String fullName) {
         return fullName.trim();
     }
 
