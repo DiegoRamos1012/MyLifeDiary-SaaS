@@ -79,6 +79,10 @@ public class User extends BaseEntity {
         return fullName.trim();
     }
 
+    public void requestDeletion(Instant now) {
+        this.deletionRequestedAt = now;
+    }
+
     public void updateEmail(String email) {
         if (email == null || email.isBlank()) {
             throw new DomainException("Erro: E-mail inválido");
