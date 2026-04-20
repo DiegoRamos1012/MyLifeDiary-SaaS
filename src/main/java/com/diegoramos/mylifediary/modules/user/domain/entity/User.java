@@ -39,7 +39,6 @@ public class User extends BaseEntity {
     @Column(name = "deletion_requested_at")
     private Instant deletionRequestedAt;
 
-
     /*
     @Column(name = stripe_customer_id)
     private String stripeCustomerId;
