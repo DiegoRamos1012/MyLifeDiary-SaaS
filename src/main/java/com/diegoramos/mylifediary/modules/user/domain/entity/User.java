@@ -29,8 +29,8 @@ public class User extends BaseEntity {
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
-    @Column(name = "birthday_date")
-    private LocalDate dateBirth;
+    @Column(name = "birth_date")
+    private LocalDate birthDate;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "user_status", nullable = false)
@@ -47,12 +47,12 @@ public class User extends BaseEntity {
     private User(String fullName,
                  String email,
                  String passwordHash,
-                 LocalDate dateBirth,
+                 LocalDate birthDate,
                  UserStatus status) {
         this.email = email;
         this.passwordHash = passwordHash;
         this.fullName = fullName;
-        this.dateBirth = dateBirth;
+        this.birthDate = birthDate;
         this.status = status;
     }
 
@@ -80,6 +80,11 @@ public class User extends BaseEntity {
 
     public void requestDeletion(Instant now) {
         this.deletionRequestedAt = now;
+        this.status = UserStatus.PENDING_DELETION;
+    }
+
+    public void markAsInactive() {
+        this.status = UserStatus.INACTIVE;
     }
 
     public void updateEmail(String email) {
@@ -101,6 +106,6 @@ public class User extends BaseEntity {
             throw new DomainException("Erro: Nome inválido");
         }
         this.fullName = normalizeFullName(fullName);
-        this.dateBirth = birthdayDate;
+        this.birthDate = birthdayDate;
     }
 }

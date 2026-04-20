@@ -32,7 +32,7 @@ class UserTest {
 
         assertEquals("diego@example.com", user.getEmail());
         assertEquals("Diego Ramos", user.getFullName());
-        assertEquals(LocalDate.of(1990, 1, 2), user.getDateBirth());
+        assertEquals(LocalDate.of(1990, 1, 2), user.getBirthDate());
         assertEquals(UserStatus.ACTIVE, user.getStatus());
         assertEquals("hash-123", readPasswordHash(user));
     }
@@ -113,7 +113,7 @@ class UserTest {
         user.updateProfileInfo("  Maria Silva  ", LocalDate.of(1995, 5, 10));
 
         assertEquals("Maria Silva", user.getFullName());
-        assertEquals(LocalDate.of(1995, 5, 10), user.getDateBirth());
+        assertEquals(LocalDate.of(1995, 5, 10), user.getBirthDate());
     }
 
     @Test
@@ -124,6 +124,6 @@ class UserTest {
 
         assertEquals("Erro: Nome inválido", exception.getMessage());
         assertEquals("Diego Ramos", user.getFullName());
-        assertEquals(LocalDate.of(1990, 1, 2), user.getDateBirth());
+        assertEquals(LocalDate.of(1990, 1, 2), user.getBirthDate());
     }
 }

@@ -10,7 +10,7 @@ public record UserResponseDTO(
         UUID id,
         String email,
         String fullName,
-        LocalDate birthdayDate,
+        LocalDate birthDate,
         String status,
         Instant createdAt
 ) {
@@ -19,7 +19,7 @@ public record UserResponseDTO(
                 user.getId(),
                 user.getEmail(),
                 user.getFullName(),
-                user.getDateBirth(),
+                user.getBirthDate(),
                 user.getStatus().name(),
                 user.getCreatedAt()
         );

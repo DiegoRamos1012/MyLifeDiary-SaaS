@@ -4,6 +4,8 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+import java.time.LocalDate;
+
 public record CreateUserRequest(
         @NotBlank(message = "O nome é obrigatório")
         String fullName,
@@ -14,6 +16,8 @@ public record CreateUserRequest(
 
         @NotBlank(message = "A senha é obrigatória")
         @Size(min = 8, max = 128)
-        String password
+        String password,
+
+        LocalDate birthDate
 ) {
 }

@@ -1,0 +1,133 @@
+package com.diegoramos.mylifediary.modules.user.service;
+
+import com.diegoramos.mylifediary.common.result.Result;
+import com.diegoramos.mylifediary.modules.user.domain.entity.User;
+import com.diegoramos.mylifediary.modules.user.domain.enums.UserStatus;
+import com.diegoramos.mylifediary.modules.user.dto.request.CreateUserRequest;
+import com.diegoramos.mylifediary.modules.user.dto.request.UpdateUserInfoRequest;
+import com.diegoramos.mylifediary.modules.user.dto.response.UserResponseDTO;
+import com.diegoramos.mylifediary.modules.user.repository.UserRepository;
+import org.jspecify.annotations.NonNull;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Clock;
+import java.time.LocalDate;
+import java.util.UUID;
+
+@Service
+@Transactional
+public class UserService {
+
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final Clock clock;
+
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, Clock clock) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.clock = clock;
+    }
+
+    /**
+     * Método de leitura com paginação que retorna todos os usuários do sistema em ordem alfabética (ASC)
+     * que permite filtragem por nome
+     *
+     * @param search = Termo de busca opcional para uma pesquisa filtrada pelo nome completo ignorando maiúsculo
+     * @param page   = A página com o conteúdo dos usuários requisitados
+     * @param size   = O tamanho da página (começa por 0)
+     * @return = retorna o usuário pesquisado ou todos cadastrados convertidos em DTO
+     */
+    @Transactional(readOnly = true)
+    public Page<UserResponseDTO> findAll(String search, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("fullName").ascending());
+
+        if (search != null && !search.isBlank()) {
+            return userRepository.findByFullNameContainingIgnoreCase(search, pageable)
+                    .map(UserResponseDTO::from);
+        }
+
+        return userRepository.findAll(pageable).map(UserResponseDTO::from);
+    }
+
+    /**
+     * Cria um usuário com senha criptografada
+     *
+     * @param dto = DTO que traz os dados para a criação
+     * @return = Retorna o usuário criado e o status de Success
+     */
+    public Result<UserResponseDTO> register(@NonNull CreateUserRequest dto) {
+        if (userRepository.existsByEmailIgnoreCase(dto.email())) {
+            return Result.failure("USER_EMAIL_ALREADY_EXISTS", "E-mail já cadastrado");
+        }
+
+        String passwordHash = passwordEncoder.encode(dto.password());
+
+        User user = User.create(dto.email(), passwordHash, dto.fullName(), dto.birthDate());
+        User saved = userRepository.save(user);
+
+        return Result.success(UserResponseDTO.from(saved));
+    }
+
+    /**
+     * Atualiza as informações do usuário com base nos campos fornecidos na requisição
+     *
+     * @param userId = ID do usuário recebido pelo controller
+     * @param dto    = DTO de campos a serem atualizados
+     * @return = Retorna uma mensagem de sucesso com os campos atualizados
+     */
+
+    public Result<UserResponseDTO> updateUserInfo(UUID userId, @NonNull UpdateUserInfoRequest dto) {
+        if (dto.newFullName() == null && dto.newDateBirth() == null) {
+            return Result.failure("USER_INFO_EMPTY_UPDATE", "Informe ao menos nome ou data de nascimento para atualizar");
+        }
+
+        if (dto.newFullName() != null && dto.newFullName().isBlank()) {
+            return Result.failure("USER_INVALID_FULL_NAME", "Nome inválido");
+        }
+
+        return userRepository.findById(userId)
+                .map(user -> {
+                    String targetFullName = dto.newFullName() != null ? dto.newFullName() : user.getFullName();
+                    LocalDate targetBirthDate = dto.newDateBirth() != null ? dto.newDateBirth() : user.getBirthDate();
+
+                    user.updateProfileInfo(targetFullName, targetBirthDate);
+                    User updated = userRepository.save(user);
+                    return Result.success(UserResponseDTO.from(updated));
+                })
+                .orElseGet(() -> Result.failure("USER_NOT_FOUND", "Usuário não encontrado"));
+    }
+
+    /**
+     * Solicita a exclusão da conta do usuário e registra a data da solicitação
+     *
+     * @param userId = ID do usuário recebido pelo controller
+     * @return = Retorna o usuário atualizado em caso de sucesso ou falha esperada conforme regra de negócio
+     */
+    public Result<UserResponseDTO> deleteUser(UUID userId) {
+        return userRepository.findById(userId)
+                .map(user -> {
+                    if (user.getStatus() == UserStatus.PENDING_DELETION) {
+                        return Result.<UserResponseDTO>failure("DELETION_ALREADY_REQUESTED", "A exclusão já foi solicitada");
+                    }
+
+                    if (user.getStatus() == UserStatus.INACTIVE) {
+                        return Result.<UserResponseDTO>failure("USER_ALREADY_INACTIVE", "Usuário já está inativo");
+                    }
+
+                    if (user.getStatus() == UserStatus.SUSPENDED) {
+                        return Result.<UserResponseDTO>failure("USER_SUSPENDED", "Usuário suspenso não pode solicitar exclusão");
+                    }
+
+                    user.requestDeletion(clock.instant());
+                    User updated = userRepository.save(user);
+                    return Result.success(UserResponseDTO.from(updated));
+                })
+                .orElseGet(() -> Result.failure("USER_NOT_FOUND", "Usuário não encontrado"));
+    }
+}
