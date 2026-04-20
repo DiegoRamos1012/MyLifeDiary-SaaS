@@ -130,4 +130,32 @@ public class UserService {
                 })
                 .orElseGet(() -> Result.failure("USER_NOT_FOUND", "Usuário não encontrado"));
     }
+
+    /**
+     * Restaura o usuário para ACTIVE quando a conta continua em exclusão pendente.
+     *
+     * @param userId = ID do usuário recebido pelo controller
+     * @return = Retorna o usuário restaurado em caso de sucesso ou falha esperada conforme regra de negócio
+     */
+    public Result<UserResponseDTO> restoreUser(UUID userId) {
+        return userRepository.findById(userId)
+                .map(user -> {
+                    if (user.getStatus() == UserStatus.ACTIVE) {
+                        return Result.<UserResponseDTO>failure("USER_ALREADY_ACTIVE", "Usuário já está ativo");
+                    }
+
+                    if (user.getStatus() == UserStatus.SUSPENDED) {
+                        return Result.<UserResponseDTO>failure("USER_SUSPENDED", "Usuário suspenso não pode ser restaurado");
+                    }
+
+                    if (user.getStatus() == UserStatus.INACTIVE) {
+                        return Result.<UserResponseDTO>failure("USER_RESTORE_NOT_ALLOWED", "Não é possível restaurar usuário inativo");
+                    }
+
+                    user.restoreAccount();
+                    User updated = userRepository.save(user);
+                    return Result.success(UserResponseDTO.from(updated));
+                })
+                .orElseGet(() -> Result.failure("USER_NOT_FOUND", "Usuário não encontrado"));
+    }
 }

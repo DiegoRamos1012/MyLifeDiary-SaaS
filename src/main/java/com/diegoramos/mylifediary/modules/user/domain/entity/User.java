@@ -88,6 +88,11 @@ public class User extends BaseEntity {
         this.status = UserStatus.INACTIVE;
     }
 
+    public void restoreAccount() {
+        this.status = UserStatus.ACTIVE;
+        this.deletionRequestedAt = null;
+    }
+
     public void updateEmail(String email) {
         if (email == null || email.isBlank()) {
             throw new DomainException("Erro: E-mail inválido");
