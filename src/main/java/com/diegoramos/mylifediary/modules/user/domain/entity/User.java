@@ -2,7 +2,6 @@ package com.diegoramos.mylifediary.modules.user.domain.entity;
 
 import com.diegoramos.mylifediary.common.base.BaseEntity;
 import com.diegoramos.mylifediary.common.exception.DomainException;
-import com.diegoramos.mylifediary.common.result.Result;
 import com.diegoramos.mylifediary.modules.user.domain.enums.UserStatus;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
@@ -19,6 +18,9 @@ import java.time.LocalDate;
 @Table(name = "users")
 public class User extends BaseEntity {
 
+    @Column(name = "full_name", nullable = false)
+    private String fullName;
+
     @Column(nullable = false, unique = true)
     private String email;
 
@@ -27,11 +29,8 @@ public class User extends BaseEntity {
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
-    @Column(name = "full_name", nullable = false)
-    private String fullName;
-
     @Column(name = "birthday_date")
-    private LocalDate birthdayDate;
+    private LocalDate dateBirth;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "user_status", nullable = false)
@@ -46,21 +45,21 @@ public class User extends BaseEntity {
     private String stripeCustomerId;
     */
 
-    private User(String email,
+    private User(String fullName,
+                 String email,
                  String passwordHash,
-                 String fullName,
-                 LocalDate birthdayDate,
+                 LocalDate dateBirth,
                  UserStatus status) {
         this.email = email;
         this.passwordHash = passwordHash;
         this.fullName = fullName;
-        this.birthdayDate = birthdayDate;
+        this.dateBirth = dateBirth;
         this.status = status;
     }
 
     public static User create(String email, String passwordHash, String fullName, LocalDate birthdayDate) {
         if (email == null || email.isBlank()) {
-            throw new DomainException("Erro:  não pode ser vazio");
+            throw new DomainException("Erro: E-mail não pode estar vazio");
         }
         if (passwordHash == null || passwordHash.isBlank()) {
             throw new DomainException("Erro: Senha inválida");
@@ -80,28 +79,25 @@ public class User extends BaseEntity {
         return fullName.trim();
     }
 
-    public Result<User> updateEmail(String email) {
+    public void updateEmail(String email) {
         if (email == null || email.isBlank()) {
-            return Result.failure("INVALID_EMAIL", "Email inválido");
+            throw new DomainException("Erro: E-mail inválido");
         }
         this.email = normalizeEmail(email);
-        return Result.success(this);
     }
 
-    public Result<User> updatePassword(String passwordHash) {
+    public void updatePassword(String passwordHash) {
         if (passwordHash == null || passwordHash.isBlank()) {
-            return Result.failure("INVALID_PASSWORD", "Senha inválida");
+            throw new DomainException("Erro: Senha inválida");
         }
         this.passwordHash = passwordHash;
-        return Result.success(this);
     }
 
-    public Result<User> updateProfile(String fullName, LocalDate birthdayDate) {
+    public void updateProfileInfo(String fullName, LocalDate birthdayDate) {
         if (fullName == null || fullName.isBlank()) {
-            return Result.failure("INVALID_FULL_NAME", "Nome inválido");
+            throw new DomainException("Erro: Nome inválido");
         }
         this.fullName = normalizeFullName(fullName);
-        this.birthdayDate = birthdayDate;
-        return Result.success(this);
+        this.dateBirth = birthdayDate;
     }
 }
