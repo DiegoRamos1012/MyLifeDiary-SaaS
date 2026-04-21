@@ -2,7 +2,6 @@ package com.diegoramos.mylifediary.modules.user.service;
 
 import com.diegoramos.mylifediary.common.result.Result;
 import com.diegoramos.mylifediary.modules.user.domain.entity.User;
-import com.diegoramos.mylifediary.modules.user.domain.enums.UserStatus;
 import com.diegoramos.mylifediary.modules.user.dto.request.CreateUserRequest;
 import com.diegoramos.mylifediary.modules.user.dto.request.UpdateUserInfoRequest;
 import com.diegoramos.mylifediary.modules.user.dto.response.UserResponseDTO;
@@ -111,22 +110,18 @@ public class UserService {
      */
     public Result<UserResponseDTO> deleteUser(UUID userId) {
         return userRepository.findById(userId)
-                .map(user -> {
-                    if (user.getStatus() == UserStatus.PENDING_DELETION) {
-                        return Result.<UserResponseDTO>failure("DELETION_ALREADY_REQUESTED", "A exclusão já foi solicitada");
+                .map(user -> switch (user.getStatus()) {
+                    case PENDING_DELETION ->
+                            Result.<UserResponseDTO>failure("DELETION_ALREADY_REQUESTED", "A exclusão já foi solicitada");
+                    case INACTIVE ->
+                            Result.<UserResponseDTO>failure("USER_ALREADY_INACTIVE", "Usuário já está inativo");
+                    case SUSPENDED ->
+                            Result.<UserResponseDTO>failure("USER_SUSPENDED", "Usuário suspenso não pode solicitar exclusão");
+                    case ACTIVE -> {
+                        user.requestDeletion(clock.instant());
+                        User updated = userRepository.save(user);
+                        yield Result.success(UserResponseDTO.from(updated));
                     }
-
-                    if (user.getStatus() == UserStatus.INACTIVE) {
-                        return Result.<UserResponseDTO>failure("USER_ALREADY_INACTIVE", "Usuário já está inativo");
-                    }
-
-                    if (user.getStatus() == UserStatus.SUSPENDED) {
-                        return Result.<UserResponseDTO>failure("USER_SUSPENDED", "Usuário suspenso não pode solicitar exclusão");
-                    }
-
-                    user.requestDeletion(clock.instant());
-                    User updated = userRepository.save(user);
-                    return Result.success(UserResponseDTO.from(updated));
                 })
                 .orElseGet(() -> Result.failure("USER_NOT_FOUND", "Usuário não encontrado"));
     }
@@ -139,22 +134,18 @@ public class UserService {
      */
     public Result<UserResponseDTO> restoreUser(UUID userId) {
         return userRepository.findById(userId)
-                .map(user -> {
-                    if (user.getStatus() == UserStatus.ACTIVE) {
-                        return Result.<UserResponseDTO>failure("USER_ALREADY_ACTIVE", "Usuário já está ativo");
-                    }
+                .map(user -> switch (user.getStatus()) {
+                    case ACTIVE -> Result.<UserResponseDTO>failure("USER_ALREADY_ACTIVE", "Usuário já está ativo");
+                    case SUSPENDED ->
+                            Result.<UserResponseDTO>failure("USER_SUSPENDED", "Usuário suspenso não pode ser restaurado");
+                    case INACTIVE ->
+                            Result.<UserResponseDTO>failure("USER_RESTORE_NOT_ALLOWED", "Não é possível restaurar usuário inativo");
 
-                    if (user.getStatus() == UserStatus.SUSPENDED) {
-                        return Result.<UserResponseDTO>failure("USER_SUSPENDED", "Usuário suspenso não pode ser restaurado");
+                    case PENDING_DELETION -> {
+                        user.restoreAccount();
+                        User updated = userRepository.save(user);
+                        yield Result.success(UserResponseDTO.from(updated));
                     }
-
-                    if (user.getStatus() == UserStatus.INACTIVE) {
-                        return Result.<UserResponseDTO>failure("USER_RESTORE_NOT_ALLOWED", "Não é possível restaurar usuário inativo");
-                    }
-
-                    user.restoreAccount();
-                    User updated = userRepository.save(user);
-                    return Result.success(UserResponseDTO.from(updated));
                 })
                 .orElseGet(() -> Result.failure("USER_NOT_FOUND", "Usuário não encontrado"));
     }
