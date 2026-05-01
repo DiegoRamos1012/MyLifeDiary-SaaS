@@ -9,17 +9,16 @@ import org.springframework.http.ResponseEntity;
 import java.time.Instant;
 
 /**
- * Helper responsável por converter um {@link Result} em uma resposta HTTP padronizada.
+ * Helper responsável por converter um {@link Result} em resposta HTTP padronizada.
  *
- * <p>O objetivo é manter os controllers enxutos, centralizando a tradução entre:
+ * <p>Ele mantém os controllers enxutos ao centralizar a tradução entre:
  *
  * <ul>
  *   <li>sucesso de domínio -> resposta HTTP de sucesso;</li>
  *   <li>falha esperada -> {@link ApiErrorResponse} com status apropriado.</li>
  * </ul>
  *
- * <p>Este helper deve ser usado apenas para erros esperados de negócio. Falhas inesperadas
- * continuam sendo tratadas pelo {@code GlobalExceptionHandler}.
+ * <p>Falhas inesperadas continuam sob responsabilidade do {@code GlobalExceptionHandler}.
  */
 public final class ResultHttpResponseHelper {
 
@@ -27,7 +26,10 @@ public final class ResultHttpResponseHelper {
     }
 
     /**
-     * Converte um {@link Result} em {@link ResponseEntity} com status de sucesso e erro padronizado.
+     * Converte um {@link Result} em {@link ResponseEntity}.
+     *
+     * <p>Em caso de sucesso, retorna a resposta com o status informado.
+     * Em caso de falha esperada, retorna um {@link ApiErrorResponse} com o status mapeado.
      *
      * @param result o resultado retornado pelo service
      * @param successStatus o status HTTP usado quando o resultado for de sucesso
@@ -42,9 +44,14 @@ public final class ResultHttpResponseHelper {
                 value -> ResponseEntity.status(successStatus).body(value),
                 error -> {
                     HttpStatus errorStatus = mapErrorStatus(error);
-                    return ResponseEntity
-                            .status(errorStatus)
-                            .body(buildErrorResponse(error, request, errorStatus));
+                    return ResponseEntity.status(errorStatus).body(new ApiErrorResponse(
+                            Instant.now(),
+                            errorStatus.value(),
+                            errorStatus.getReasonPhrase(),
+                            error.message(),
+                            request.getRequestURI(),
+                            error.details()
+                    ));
                 }
         );
     }
@@ -62,26 +69,7 @@ public final class ResultHttpResponseHelper {
             default -> HttpStatus.BAD_REQUEST;
         };
     }
-
-    /**
-     * Monta o corpo padronizado de erro da API.
-     *
-     * @param error erro de domínio retornado pelo service
-     * @param request requisição HTTP atual
-     * @param status status HTTP resolvido para o erro
-     * @return corpo de erro da API pronto para serialização
-     */
-    private static ApiErrorResponse buildErrorResponse(ResultError error,
-                                                       HttpServletRequest request,
-                                                       HttpStatus status) {
-        return new ApiErrorResponse(
-                Instant.now(),
-                status.value(),
-                status.getReasonPhrase(),
-                error.message(),
-                request.getRequestURI(),
-                error.details()
-        );
-    }
 }
+
+
 
