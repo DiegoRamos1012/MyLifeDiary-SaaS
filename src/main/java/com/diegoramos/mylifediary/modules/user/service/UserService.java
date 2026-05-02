@@ -5,6 +5,7 @@ import com.diegoramos.mylifediary.common.result.Result;
 import com.diegoramos.mylifediary.modules.user.domain.entity.User;
 import com.diegoramos.mylifediary.modules.user.dto.request.CreateUserRequest;
 import com.diegoramos.mylifediary.modules.user.dto.request.UpdateEmailRequest;
+import com.diegoramos.mylifediary.modules.user.dto.request.UpdatePasswordRequest;
 import com.diegoramos.mylifediary.modules.user.dto.request.UpdateUserInfoRequest;
 import com.diegoramos.mylifediary.modules.user.dto.response.UserResponseDTO;
 import com.diegoramos.mylifediary.modules.user.repository.UserRepository;
@@ -50,7 +51,6 @@ public class UserService {
      */
     @Transactional(readOnly = true)
     public Page<UserResponseDTO> findAll(String search, int page, int size) {
-        log.debug("findAll: search='{}' page={} size={}", search, page, size);
         Pageable pageable = PageRequest.of(page, size, Sort.by("fullName").ascending());
 
         if (search != null && !search.isBlank()) {
@@ -77,13 +77,12 @@ public class UserService {
             String passwordHash = passwordEncoder.encode(dto.password());
             User user = User.create(dto.email(), passwordHash, dto.fullName(), dto.birthDate());
             User saved = userRepository.save(user);
-            log.info("register: user created successfully");
             return Result.success(UserResponseDTO.from(saved));
         } catch (DomainException ex) {
             log.info("register: domain validation failed: {}", ex.getMessage());
             return Result.failure("USER_INVALID_INPUT", ex.getMessage());
         } catch (DataIntegrityViolationException ex) {
-            log.warn("register: data integrity violation (possible race): {}", ex.getMessage());
+            log.warn("register: data integrity violation (possible race)");
             return Result.failure("USER_EMAIL_ALREADY_EXISTS", "E-mail já cadastrado");
         }
     }
@@ -102,22 +101,12 @@ public class UserService {
     public Result<UserResponseDTO> changeEmail(UUID userId, @NonNull UpdateEmailRequest dto) {
         return userRepository.findById(userId)
                 .map(user -> switch (dto.newEmail() == null ? null : dto.newEmail().trim()) {
-                    case null -> {
-                        log.info("changeEmail: invalid newEmail (null) for userId={}", userId);
-                        yield Result.<UserResponseDTO>failure("USER_INVALID_EMAIL", "E-mail inválido");
-                    }
-                    case "" -> {
-                        log.info("changeEmail: invalid newEmail (empty) for userId={}", userId);
-                        yield Result.<UserResponseDTO>failure("USER_INVALID_EMAIL", "E-mail inválido");
-                    }
-                    case String requestedEmail when requestedEmail.equalsIgnoreCase(user.getEmail()) -> {
-                        log.info("changeEmail: requested email equals current for userId={}", userId);
-                        yield Result.<UserResponseDTO>failure("USER_EMAIL_SAME", "O novo e-mail é igual ao atual");
-                    }
-                    case String requestedEmail when userRepository.existsByEmailIgnoreCase(requestedEmail) -> {
-                        log.info("changeEmail: requested email already in use for userId={}", userId);
-                        yield Result.<UserResponseDTO>failure("USER_EMAIL_ALREADY_EXISTS", "E-mail já cadastrado");
-                    }
+                    case null -> Result.<UserResponseDTO>failure("USER_INVALID_EMAIL", "E-mail inválido");
+                    case "" -> Result.<UserResponseDTO>failure("USER_INVALID_EMAIL", "E-mail inválido");
+                    case String requestedEmail when requestedEmail.equalsIgnoreCase(user.getEmail()) ->
+                            Result.<UserResponseDTO>failure("USER_EMAIL_SAME", "O novo e-mail é igual ao atual");
+                    case String requestedEmail when userRepository.existsByEmailIgnoreCase(requestedEmail) ->
+                            Result.<UserResponseDTO>failure("USER_EMAIL_ALREADY_EXISTS", "E-mail já cadastrado");
                     case String requestedEmail -> {
                         try {
                             user.changeEmail(requestedEmail);
@@ -127,12 +116,41 @@ public class UserService {
                         }
 
                         User updated = userRepository.save(user);
-                        log.info("changeEmail: success for userId={}", userId);
                         yield Result.success(UserResponseDTO.from(updated));
                     }
                 })
                 .orElseGet(() -> {
                     log.info("changeEmail: user not found userId={}", userId);
+                    return Result.failure("USER_NOT_FOUND", "Usuário não encontrado");
+                });
+    }
+
+    /**
+     * Altera a senha do usuário identificado por {@code userId}.
+     * <p>
+     * Mantém o padrão de uso de {@link Result}: validações esperadas retornam
+     * {@code Result.failure(code, message)} enquanto sucessos retornam
+     * {@code Result.success(dto)}.
+     *
+     * @param userId id do usuário a ser atualizado
+     * @param dto    DTO contendo a nova senha
+     * @return resultado com o usuário atualizado ou falha de negócio
+     */
+    public Result<UserResponseDTO> changePassword(UUID userId, @NonNull UpdatePasswordRequest dto) {
+        return userRepository.findById(userId)
+                .map(user -> {
+                    try {
+                        String requestedPassword = dto.newPassword();
+                        String newPasswordHash = passwordEncoder.encode(requestedPassword);
+                        user.changePassword(newPasswordHash);
+                    } catch (DomainException ex) {
+                        return Result.<UserResponseDTO>failure("USER_UPDATE_FAILED", ex.getMessage());
+                    }
+                    User updated = userRepository.save(user);
+                    return Result.success(UserResponseDTO.from(updated));
+                })
+                .orElseGet(() -> {
+                    log.info("changePassword: user not found userId={}", userId);
                     return Result.failure("USER_NOT_FOUND", "Usuário não encontrado");
                 });
     }
@@ -166,7 +184,6 @@ public class UserService {
                         return Result.<UserResponseDTO>failure("USER_UPDATE_FAILED", ex.getMessage());
                     }
                     User updated = userRepository.save(user);
-                    log.info("changeProfileInfo: success for userId={}", userId);
                     return Result.success(UserResponseDTO.from(updated));
                 })
                 .orElseGet(() -> {
@@ -184,18 +201,12 @@ public class UserService {
     public Result<UserResponseDTO> deleteUser(UUID userId) {
         return userRepository.findById(userId)
                 .map(user -> switch (user.getStatus()) {
-                    case PENDING_DELETION -> {
-                        log.info("deleteUser: deletion already requested for userId={}", userId);
-                        yield Result.<UserResponseDTO>failure("DELETION_ALREADY_REQUESTED", "A exclusão já foi solicitada");
-                    }
-                    case INACTIVE -> {
-                        log.info("deleteUser: user already inactive userId={}", userId);
-                        yield Result.<UserResponseDTO>failure("USER_ALREADY_INACTIVE", "Usuário já está inativo");
-                    }
-                    case SUSPENDED -> {
-                        log.info("deleteUser: user suspended cannot request deletion userId={}", userId);
-                        yield Result.<UserResponseDTO>failure("USER_SUSPENDED", "Usuário suspenso não pode solicitar exclusão");
-                    }
+                    case PENDING_DELETION ->
+                            Result.<UserResponseDTO>failure("DELETION_ALREADY_REQUESTED", "A exclusão já foi solicitada");
+                    case INACTIVE ->
+                            Result.<UserResponseDTO>failure("USER_ALREADY_INACTIVE", "Usuário já está inativo");
+                    case SUSPENDED ->
+                            Result.<UserResponseDTO>failure("USER_SUSPENDED", "Usuário suspenso não pode solicitar exclusão");
                     case ACTIVE -> {
                         try {
                             user.requestDeletion(clock.instant());
@@ -204,7 +215,6 @@ public class UserService {
                             yield Result.<UserResponseDTO>failure("USER_UPDATE_FAILED", ex.getMessage());
                         }
                         User updated = userRepository.save(user);
-                        log.info("deleteUser: deletion requested userId={}", userId);
                         yield Result.success(UserResponseDTO.from(updated));
                     }
                 })
@@ -223,18 +233,11 @@ public class UserService {
     public Result<UserResponseDTO> restoreUser(UUID userId) {
         return userRepository.findById(userId)
                 .map(user -> switch (user.getStatus()) {
-                    case ACTIVE -> {
-                        log.info("restoreUser: user already active userId={}", userId);
-                        yield Result.<UserResponseDTO>failure("USER_ALREADY_ACTIVE", "Usuário já está ativo");
-                    }
-                    case SUSPENDED -> {
-                        log.info("restoreUser: suspended user cannot be restored userId={}", userId);
-                        yield Result.<UserResponseDTO>failure("USER_SUSPENDED", "Usuário suspenso não pode ser restaurado");
-                    }
-                    case INACTIVE -> {
-                        log.info("restoreUser: inactive user cannot be restored userId={}", userId);
-                        yield Result.<UserResponseDTO>failure("USER_RESTORE_NOT_ALLOWED", "Não é possível restaurar usuário inativo");
-                    }
+                    case ACTIVE -> Result.<UserResponseDTO>failure("USER_ALREADY_ACTIVE", "Usuário já está ativo");
+                    case SUSPENDED ->
+                            Result.<UserResponseDTO>failure("USER_SUSPENDED", "Usuário suspenso não pode ser restaurado");
+                    case INACTIVE ->
+                            Result.<UserResponseDTO>failure("USER_RESTORE_NOT_ALLOWED", "Não é possível restaurar usuário inativo");
 
                     case PENDING_DELETION -> {
                         try {
@@ -244,7 +247,6 @@ public class UserService {
                             yield Result.<UserResponseDTO>failure("USER_UPDATE_FAILED", ex.getMessage());
                         }
                         User updated = userRepository.save(user);
-                        log.info("restoreUser: account restored userId={}", userId);
                         yield Result.success(UserResponseDTO.from(updated));
                     }
                 })
