@@ -3,6 +3,7 @@ package com.diegoramos.mylifediary.modules.user.service;
 import com.diegoramos.mylifediary.common.result.Result;
 import com.diegoramos.mylifediary.modules.user.domain.entity.User;
 import com.diegoramos.mylifediary.modules.user.dto.request.CreateUserRequest;
+import com.diegoramos.mylifediary.modules.user.dto.request.UpdateEmailRequest;
 import com.diegoramos.mylifediary.modules.user.dto.request.UpdateUserInfoRequest;
 import com.diegoramos.mylifediary.modules.user.dto.response.UserResponseDTO;
 import com.diegoramos.mylifediary.modules.user.repository.UserRepository;
@@ -81,13 +82,47 @@ public class UserService {
      * @return = Retorna uma mensagem de sucesso com os campos atualizados
      */
 
-    public Result<UserResponseDTO> updateUserInfo(UUID userId, @NonNull UpdateUserInfoRequest dto) {
-        if (dto.newFullName() == null && dto.newDateBirth() == null) {
-            return Result.failure("USER_INFO_EMPTY_UPDATE", "Informe ao menos nome ou data de nascimento para atualizar");
+    /**
+     * Atualiza o e-mail do usuário identificado por {@code userId}.
+     * <p>
+     * Mantém o padrão de uso de {@link Result}: validações esperadas retornam
+     * {@code Result.failure(code, message)} enquanto sucessos retornam
+     * {@code Result.success(dto)}.
+     *
+     * @param userId id do usuário a ser atualizado
+     * @param dto    DTO contendo o novo e-mail
+     * @return resultado com o usuário atualizado ou falha de negócio
+     */
+    public Result<UserResponseDTO> changeEmail(UUID userId, @NonNull UpdateEmailRequest dto) {
+
+        return userRepository.findById(userId)
+                .map(user -> {
+
+                    if (dto.newEmail() != null) {
+                        user.changeEmail(dto.newEmail());
+                    }
+
+                    return Result.success(UserResponseDTO.from(user));
+                })
+                .orElse(Result.failure("USER_NOT_FOUND", "Usuário não encontrado"));
+    }
+
+    public Result<UserResponseDTO> changeProfileInfo(UUID userId, @NonNull UpdateUserInfoRequest dto) {
+        boolean hasNoUpdates =
+                dto.newFullName() == null && dto.newDateBirth() == null;
+
+        if (hasNoUpdates) {
+            return Result.failure(
+                    "USER_INFO_EMPTY_UPDATE",
+                    "Informe ao menos nome ou data de nascimento para atualizar"
+            );
         }
 
         if (dto.newFullName() != null && dto.newFullName().isBlank()) {
-            return Result.failure("USER_INVALID_FULL_NAME", "Nome inválido");
+            return Result.failure(
+                    "USER_INVALID_FULL_NAME",
+                    "Nome inválido"
+            );
         }
 
         return userRepository.findById(userId)

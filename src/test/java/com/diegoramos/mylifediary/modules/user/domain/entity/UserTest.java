@@ -68,19 +68,19 @@ class UserTest {
     }
 
     @Test
-    void updateEmailShouldNormalizeValue() {
+    void changeEmailShouldNormalizeValue() {
         User user = createValidUser();
 
-        user.updateEmail("  NEW@Example.com  ");
+        user.changeEmail("  NEW@Example.com  ");
 
         assertEquals("new@example.com", user.getEmail());
     }
 
     @Test
-    void updateEmailShouldThrowWithoutChangingCurrentValue() {
+    void changeEmailShouldThrowWithoutChangingCurrentValue() {
         User user = createValidUser();
 
-        DomainException exception = assertThrows(DomainException.class, () -> user.updateEmail(" "));
+        DomainException exception = assertThrows(DomainException.class, () -> user.changeEmail(" "));
 
         assertEquals("Erro: E-mail inválido", exception.getMessage());
         assertEquals("diego@example.com", user.getEmail());

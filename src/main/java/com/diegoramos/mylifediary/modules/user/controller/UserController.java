@@ -40,24 +40,24 @@ public class UserController {
         return ResultHttpResponseHelper.respond(userService.register(dto), HttpStatus.CREATED, request);
     }
 
-    @PatchMapping("/{userId}")
+    @PatchMapping("/{userId}/userInfo")
     @Operation(summary = "Atualiza informações adicionais do usuário, como nome completo e data de nascimento")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Usuário atualizado com sucesso"),
             @ApiResponse(responseCode = "400", description = "Falha ao atualizar usuário"),
             @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
     })
-    public ResponseEntity<?> updateUserInfo(@PathVariable UUID userId,
+    public ResponseEntity<?> changeProfileInfo(@PathVariable UUID userId,
                                             @RequestBody @Valid UpdateUserInfoRequest dto,
                                             HttpServletRequest request) {
-        return ResultHttpResponseHelper.respond(userService.updateUserInfo(userId, dto), HttpStatus.OK, request);
+        return ResultHttpResponseHelper.respond(userService.changeProfileInfo(userId, dto), HttpStatus.OK, request);
     }
 
     @PatchMapping("/{userId")
     @Operation(summary = "Atualiza o email do usuário")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Email atualizado com sucesso"),
-            @ApiResponse(responseCode = "400", description = "Falha au atualizar email")
+            @ApiResponse(responseCode = "400", description = "Falha au atualizar email"),
             @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
     })
     public ResponseEntity<?> updateEmail
