@@ -2,7 +2,6 @@ package com.diegoramos.mylifediary.common.response;
 
 import com.diegoramos.mylifediary.common.result.Result;
 import com.diegoramos.mylifediary.common.result.ResultError;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -19,6 +18,7 @@ import java.time.Instant;
  * </ul>
  *
  * <p>Falhas inesperadas continuam sob responsabilidade do {@code GlobalExceptionHandler}.
+ * Como este helper nao recebe mais o request HTTP, o campo path no erro e opcional.
  */
 public final class ResultHttpResponseHelper {
 
@@ -30,16 +30,15 @@ public final class ResultHttpResponseHelper {
      *
      * <p>Em caso de sucesso, retorna a resposta com o status informado.
      * Em caso de falha esperada, retorna um {@link ApiErrorResponse} com o status mapeado.
+     * O campo path sera nulo, pois o helper nao depende de contexto HTTP.
      *
      * @param result o resultado retornado pelo service
      * @param successStatus o status HTTP usado quando o resultado for de sucesso
-     * @param request a requisição HTTP atual, usada para preencher o caminho no erro
      * @param <T> tipo do valor de sucesso carregado pelo {@link Result}
      * @return uma resposta HTTP pronta para uso no controller
      */
     public static <T> ResponseEntity<?> respond(Result<T> result,
-                                                HttpStatus successStatus,
-                                                HttpServletRequest request) {
+                                                HttpStatus successStatus) {
         return result.fold(
                 value -> ResponseEntity.status(successStatus).body(value),
                 error -> {
@@ -49,7 +48,7 @@ public final class ResultHttpResponseHelper {
                             errorStatus.value(),
                             errorStatus.getReasonPhrase(),
                             error.message(),
-                            request.getRequestURI(),
+                            null,
                             error.details()
                     ));
                 }
