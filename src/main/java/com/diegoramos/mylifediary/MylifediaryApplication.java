@@ -11,5 +11,4 @@ public class MylifediaryApplication {
     static void main(String[] args) {
         SpringApplication.run(MylifediaryApplication.class, args);
     }
-
 }
