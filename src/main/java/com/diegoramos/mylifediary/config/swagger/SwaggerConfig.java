@@ -29,7 +29,7 @@ public class SwaggerConfig {
                 .info(new Info()
                         .title("MyLifeDiary API")
                         .description("Documentação da API backend do MyLifeDiary")
-                        .version("v1"))
+                        .version("1.0.0"))
                 .servers(List.of(new Server().url("/")));
     }
 }
