@@ -4,6 +4,7 @@ import com.diegoramos.mylifediary.modules.user.domain.entity.User;
 import com.diegoramos.mylifediary.modules.user.domain.enums.UserStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -11,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -40,20 +42,29 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Page<User> findByFullNameContainingIgnoreCase(String fullName, Pageable pageable);
 
     /**
+     * Busca usuários por status, com paginação
+     *
+     * @param statusList lista de status
+     * @param pageable   configuração de paginação e ordenação
+     */
+    @EntityGraph(attributePaths = {"roles"})
+    Page<User> findByStatusIn(List<UserStatus> statusList, Pageable pageable);
+
+    /**
      * Atualiza em lote usuários que já passaram da data limite de exclusão pendente,
      * alterando o status de {@code pendingStatus} para {@code inactiveStatus}.
      *
-     * @param pendingStatus status de origem elegível para transição
+     * @param pendingStatus  status de origem elegível para transição
      * @param inactiveStatus status de destino após a transição
-     * @param threshold data limite para elegibilidade (deletionRequestedAt < threshold)
+     * @param threshold      data limite para elegibilidade (deletionRequestedAt < threshold)
      */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
-            update User u
-               set u.status = :inactiveStatus
-             where u.status = :pendingStatus
-               and u.deletionRequestedAt is not null
-               and u.deletionRequestedAt < :threshold
+            UPDATE User u
+               SET u.status = :inactiveStatus
+             WHERE u.status = :pendingStatus
+               AND u.deletionRequestedAt IS NOT NULL
+               AND u.deletionRequestedAt < :threshold
             """)
     void markPendingDeletionUsersAsInactive(
             @Param("pendingStatus") UserStatus pendingStatus,
@@ -65,14 +76,14 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      * Remove definitivamente em lote usuários inativos que já passaram da data limite.
      *
      * @param inactiveStatus status de inatividade elegível para hard delete
-     * @param threshold data limite para elegibilidade (deletionRequestedAt < threshold)
+     * @param threshold      data limite para elegibilidade (deletionRequestedAt < threshold)
      */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
-            delete from User u
-             where u.status = :inactiveStatus
-               and u.deletionRequestedAt is not null
-               and u.deletionRequestedAt < :threshold
+            DELETE from User u
+             WHERE u.status = :inactiveStatus
+               AND u.deletionRequestedAt is not null
+               AND u.deletionRequestedAt < :threshold
             """)
     void hardDeleteInactiveUsersBefore(
             @Param("inactiveStatus") UserStatus inactiveStatus,
