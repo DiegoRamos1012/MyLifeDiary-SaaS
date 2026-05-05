@@ -61,6 +61,18 @@ public class UserService {
         return userRepository.findAll(pageable).map(UserResponseDTO::from);
     }
 
+    @Transactional(readOnly = true)
+    public Page<UserResponseDTO> findUsersByStatus(String search, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("fullName").ascending());
+
+        if (search != null && !search.isBlank()) {
+            return userRepository.findByFullNameContainingIgnoreCase(search, pageable)
+                    .map(UserResponseDTO::from);
+        }
+
+        return userRepository.findAll(pageable).map(UserResponseDTO::from);
+    }
+
     /**
      * Cria um usuário com senha criptografada
      *

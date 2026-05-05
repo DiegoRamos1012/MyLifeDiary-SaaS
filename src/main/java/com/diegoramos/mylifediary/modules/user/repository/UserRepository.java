@@ -4,7 +4,6 @@ import com.diegoramos.mylifediary.modules.user.domain.entity.User;
 import com.diegoramos.mylifediary.modules.user.domain.enums.UserStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -47,7 +46,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      * @param statusList lista de status
      * @param pageable   configuração de paginação e ordenação
      */
-    @EntityGraph(attributePaths = {"roles"})
     Page<User> findByStatusIn(List<UserStatus> statusList, Pageable pageable);
 
     /**
@@ -82,7 +80,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Query("""
             DELETE from User u
              WHERE u.status = :inactiveStatus
-               AND u.deletionRequestedAt is not null
+               AND u.deletionRequestedAt IS NOT NULL
                AND u.deletionRequestedAt < :threshold
             """)
     void hardDeleteInactiveUsersBefore(
