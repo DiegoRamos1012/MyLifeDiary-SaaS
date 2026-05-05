@@ -155,6 +155,17 @@ public class UserService {
                 });
     }
 
+    /**
+     * Atualiza o nome completo e/ou data de nascimento do usuário identificado por {@code userId}.
+     * <p>
+     * Mantém o padrão de uso de {@link Result}: validações esperadas retornam
+     * {@code Result.failure(code, message)} enquanto sucessos retornam
+     * {@code Result.success(dto)}.
+     *
+     * @param userId id do usuário a ser atualizado
+     * @param dto    DTO contendo os novos dados de perfil (nome completo e/ou data de nascimento)
+     * @return resultado com o usuário atualizado ou falha de negócio
+     */
     public Result<UserResponseDTO> changeProfileInfo(UUID userId, @NonNull UpdateUserInfoRequest dto) {
         boolean hasNoUpdates =
                 dto.newFullName() == null && dto.newDateBirth() == null;
