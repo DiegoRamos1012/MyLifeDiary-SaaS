@@ -188,7 +188,7 @@ public class User extends BaseEntity {
      *
      * @param fullName  novo nome completo (obrigatório)
      * @param birthDate nova data de nascimento (opcional)
-     * @param today
+     * @param today     data atual do Clock
      * @throws DomainException quando o nome for nulo ou vazio
      */
     public void changeProfileInfo(String fullName, LocalDate birthDate, LocalDate today) {
