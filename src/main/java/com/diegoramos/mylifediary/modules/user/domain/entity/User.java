@@ -93,13 +93,13 @@ public class User extends BaseEntity {
      */
     public static User create(String email, String passwordHash, String fullName, LocalDate birthDate) {
         if (email == null || email.isBlank()) {
-            throw new DomainException("Erro: E-mail não pode estar vazio");
+            throw new DomainException("Erro: e-mail não pode estar vazio");
         }
         if (passwordHash == null || passwordHash.isBlank()) {
-            throw new DomainException("Erro: Senha inválida");
+            throw new DomainException("Erro: senha inválida");
         }
         if (fullName == null || fullName.isBlank()) {
-            throw new DomainException("Erro: Nome não pode estar vazio");
+            throw new DomainException("Erro: nome não pode estar vazio");
         }
 
         return new User(normalizeEmail(email), passwordHash, normalizeFullName(fullName), birthDate, UserStatus.ACTIVE);
@@ -136,13 +136,13 @@ public class User extends BaseEntity {
         this.status = UserStatus.PENDING_DELETION;
     }
 
-    /**
-     * Marca o usuário como inativo (hard state) — usado por jobs/rotinas de
-     * limpeza que convertem contas pendentes em inativas.
-     */
-    public void markAsInactive() {
+    /*
+      Marca o usuário como inativo (hard state) — usado por jobs/rotinas de
+      limpeza que convertem contas pendentes em inativas.
+
+     public void markAsInactive() {
         this.status = UserStatus.INACTIVE;
-    }
+    } */
 
     /**
      * Restaura a conta para o estado {@code ACTIVE} e limpa a marcação de
@@ -177,7 +177,7 @@ public class User extends BaseEntity {
      */
     public void changePassword(String newPasswordHash) {
         if (newPasswordHash == null || newPasswordHash.isBlank()) {
-            throw new DomainException("Erro: Senha inválida");
+            throw new DomainException("Erro: senha inválida");
         }
         this.passwordHash = newPasswordHash;
         updateLastTimeChanged();
@@ -188,12 +188,18 @@ public class User extends BaseEntity {
      *
      * @param fullName  novo nome completo (obrigatório)
      * @param birthDate nova data de nascimento (opcional)
+     * @param today
      * @throws DomainException quando o nome for nulo ou vazio
      */
-    public void changeProfileInfo(String fullName, LocalDate birthDate) {
+    public void changeProfileInfo(String fullName, LocalDate birthDate, LocalDate today) {
         if (fullName == null || fullName.isBlank()) {
-            throw new DomainException("Erro: Nome inválido");
+            throw new DomainException("Erro: nome inválido");
         }
+
+        if (birthDate == null || birthDate.isAfter(today)) {
+            throw new DomainException("Erro: data inválida");
+        }
+
         this.fullName = normalizeFullName(fullName);
         this.birthDate = birthDate;
     }

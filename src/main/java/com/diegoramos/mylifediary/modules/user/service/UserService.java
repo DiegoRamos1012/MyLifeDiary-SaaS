@@ -200,8 +200,10 @@ public class UserService {
                 .map(user -> {
                     String targetFullName = dto.newFullName() != null ? dto.newFullName() : user.getFullName();
                     LocalDate targetBirthDate = dto.newDateBirth() != null ? dto.newDateBirth() : user.getBirthDate();
+
+                    LocalDate today = LocalDate.now(clock);
                     try {
-                        user.changeProfileInfo(targetFullName, targetBirthDate);
+                        user.changeProfileInfo(targetFullName, targetBirthDate, today);
                     } catch (DomainException ex) {
                         log.info("changeProfileInfo: domain error for userId={} reason={}", userId, ex.getMessage());
                         return Result.<UserResponseDTO>failure("USER_UPDATE_FAILED", ex.getMessage());
