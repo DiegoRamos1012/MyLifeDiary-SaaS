@@ -3,6 +3,7 @@ package com.diegoramos.mylifediary.modules.user.domain.entity;
 import com.diegoramos.mylifediary.common.base.BaseEntity;
 import com.diegoramos.mylifediary.common.exception.DomainException;
 import com.diegoramos.mylifediary.modules.user.domain.enums.UserStatus;
+import com.diegoramos.mylifediary.modules.user.domain.enums.UserRole;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -48,6 +49,10 @@ public class User extends BaseEntity {
     @Column(name = "user_status", nullable = false)
     private UserStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false)
+    private UserRole role;
+
     @Column(name = "deletion_requested_at")
     private Instant deletionRequestedAt;
 
@@ -65,16 +70,18 @@ public class User extends BaseEntity {
      * @param birthDate    data de nascimento (opcional)
      * @param status       status inicial do usuário
      */
-    private User(String fullName,
-                 String email,
+    private User(String email,
                  String passwordHash,
+                 String fullName,
                  LocalDate birthDate,
-                 UserStatus status) {
+                 UserStatus status,
+                 UserRole role) {
         this.email = email;
         this.passwordHash = passwordHash;
         this.fullName = fullName;
         this.birthDate = birthDate;
         this.status = status;
+        this.role = role;
     }
 
     /**
@@ -102,7 +109,7 @@ public class User extends BaseEntity {
             throw new DomainException("Erro: nome não pode estar vazio");
         }
 
-        return new User(normalizeEmail(email), passwordHash, normalizeFullName(fullName), birthDate, UserStatus.ACTIVE);
+        return new User(normalizeEmail(email), passwordHash, normalizeFullName(fullName), birthDate, UserStatus.ACTIVE, UserRole.USER);
     }
 
     /**
@@ -181,6 +188,14 @@ public class User extends BaseEntity {
         }
         this.passwordHash = newPasswordHash;
         updateLastTimeChanged();
+    }
+
+    /**
+     * Retorna o hash da senha para uso interno de autenticação.
+     * Mantemos nome explícito para deixar claro o propósito.
+     */
+    public String getPasswordHash() {
+        return this.passwordHash;
     }
 
     /**

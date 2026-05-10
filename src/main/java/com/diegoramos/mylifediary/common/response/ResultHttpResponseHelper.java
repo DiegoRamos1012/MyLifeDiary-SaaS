@@ -32,9 +32,9 @@ public final class ResultHttpResponseHelper {
      * Em caso de falha esperada, retorna um {@link ApiErrorResponse} com o status mapeado.
      * O campo path sera nulo, pois o helper nao depende de contexto HTTP.
      *
-     * @param result o resultado retornado pelo service
+     * @param result        o resultado retornado pelo service
      * @param successStatus o status HTTP usado quando o resultado for de sucesso
-     * @param <T> tipo do valor de sucesso carregado pelo {@link Result}
+     * @param <T>           tipo do valor de sucesso carregado pelo {@link Result}
      * @return uma resposta HTTP pronta para uso no controller
      */
     public static <T> ResponseEntity<?> respond(Result<T> result,
@@ -65,6 +65,7 @@ public final class ResultHttpResponseHelper {
         return switch (error.code()) {
             case "USER_EMAIL_ALREADY_EXISTS" -> HttpStatus.CONFLICT;
             case "USER_NOT_FOUND" -> HttpStatus.NOT_FOUND;
+            case "AUTH_INVALID_CREDENTIALS", "AUTH_ACCOUNT_NOT_ACTIVE" -> HttpStatus.UNAUTHORIZED;
             default -> HttpStatus.BAD_REQUEST;
         };
     }
