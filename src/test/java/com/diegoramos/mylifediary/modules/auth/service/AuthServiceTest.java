@@ -18,8 +18,10 @@ import java.lang.reflect.Field;
 import java.time.LocalDate;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
@@ -35,6 +37,12 @@ class AuthServiceTest {
 
     @InjectMocks
     private AuthService authService;
+
+    private static void setStatus(User user) throws Exception {
+        Field field = User.class.getDeclaredField("status");
+        field.setAccessible(true);
+        field.set(user, UserStatus.SUSPENDED);
+    }
 
     @Test
     void authenticate_userNotFound_returnsInvalidCredentials() {
@@ -63,7 +71,7 @@ class AuthServiceTest {
     @Test
     void authenticate_accountNotActive_returnsAccountNotActive() throws Exception {
         User user = User.create("john@example.com", "hash", "John", LocalDate.of(1990, 1, 1));
-        setStatus(user, UserStatus.SUSPENDED);
+        setStatus(user);
 
         when(userRepository.findByEmailIgnoreCase("john@example.com")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("secret", "hash")).thenReturn(true);
@@ -91,12 +99,6 @@ class AuthServiceTest {
         assertEquals(3600L, result.getValue().expiresIn());
 
         verify(jwtService).generateToken("john@example.com", "USER");
-    }
-
-    private static void setStatus(User user, UserStatus status) throws Exception {
-        Field field = User.class.getDeclaredField("status");
-        field.setAccessible(true);
-        field.set(user, status);
     }
 }
 
