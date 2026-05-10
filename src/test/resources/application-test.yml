@@ -1,0 +1,3 @@
+jwt:
+  secret: teste123
+  expiration: 3600
