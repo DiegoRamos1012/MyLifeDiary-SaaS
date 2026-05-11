@@ -3,6 +3,7 @@ package com.diegoramos.mylifediary.modules.user.service;
 import com.diegoramos.mylifediary.common.exception.DomainException;
 import com.diegoramos.mylifediary.common.result.Result;
 import com.diegoramos.mylifediary.modules.user.domain.entity.User;
+import com.diegoramos.mylifediary.modules.user.domain.enums.UserStatus;
 import com.diegoramos.mylifediary.modules.user.dto.request.CreateUserRequest;
 import com.diegoramos.mylifediary.modules.user.dto.request.UpdateEmailRequest;
 import com.diegoramos.mylifediary.modules.user.dto.request.UpdatePasswordRequest;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -61,16 +63,29 @@ public class UserService {
         return userRepository.findAll(pageable).map(UserResponseDTO::from);
     }
 
+    /**
+     * Método de leitura com paginação que retorna usuários filtrados por status.
+     * Não tem result por envolver apenas operação de leitura
+     *
+     * <p>Permite buscar usuários em estados específicos (PENDING_DELETION, INACTIVE, SUSPENDED, ACTIVE),
+     * com ordenação por status em ordem ascendente.</p>
+     *
+     * @param statusList lista de {@link UserStatus} para filtrar os usuários
+     * @param page       o número da página (começa por 0)
+     * @param size       o tamanho da página
+     * @return página contendo os usuários que correspondem ao filtro de status, convertidos em DTO
+     */
     @Transactional(readOnly = true)
-    public Page<UserResponseDTO> findUsersByStatus(String search, int page, int size) {
+    public Page<UserResponseDTO> findUsersByStatus(List<UserStatus> statusList,
+                                                   int page, int size) {
+
         Pageable pageable = PageRequest.of(page, size, Sort.by("fullName").ascending());
 
-        if (search != null && !search.isBlank()) {
-            return userRepository.findByFullNameContainingIgnoreCase(search, pageable)
-                    .map(UserResponseDTO::from);
+        if (statusList == null || statusList.isEmpty()) {
+            return Page.empty(pageable);
         }
-
-        return userRepository.findAll(pageable).map(UserResponseDTO::from);
+        return userRepository.findByStatusIn(statusList, pageable)
+                .map(UserResponseDTO::from);
     }
 
     /**
@@ -127,8 +142,13 @@ public class UserService {
                             yield Result.<UserResponseDTO>failure("USER_UPDATE_FAILED", ex.getMessage());
                         }
 
-                        User updated = userRepository.save(user);
-                        yield Result.success(UserResponseDTO.from(updated));
+                        try {
+                            User updated = userRepository.save(user);
+                            yield Result.success(UserResponseDTO.from(updated));
+                        } catch (DataIntegrityViolationException ex) {
+                            log.warn("changeEmail: data integrity violation (possible race) userId={}", userId);
+                            yield Result.<UserResponseDTO>failure("USER_EMAIL_ALREADY_EXISTS", "E-mail já cadastrado");
+                        }
                     }
                 })
                 .orElseGet(() -> {

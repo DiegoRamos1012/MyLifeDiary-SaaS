@@ -1,6 +1,5 @@
 package com.diegoramos.mylifediary.modules.user.service;
 
-import com.diegoramos.mylifediary.common.exception.DomainException;
 import com.diegoramos.mylifediary.common.result.Result;
 import com.diegoramos.mylifediary.modules.user.domain.entity.User;
 import com.diegoramos.mylifediary.modules.user.domain.enums.UserStatus;
@@ -30,7 +29,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -38,26 +38,32 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
 
+    private final Instant now = Instant.parse("2026-04-20T00:00:00Z");
     @Mock
     private UserRepository userRepository;
-
     @Mock
     private PasswordEncoder passwordEncoder;
-
     @Mock
     private Clock clock;
-
     @InjectMocks
     private UserService userService;
-
     @Captor
     private ArgumentCaptor<User> userCaptor;
 
-    private final Instant now = Instant.parse("2026-04-20T00:00:00Z");
+    // Helper to access private passwordHash for assertion
+    private static String readPasswordHash(User user) {
+        try {
+            java.lang.reflect.Field f = User.class.getDeclaredField("passwordHash");
+            f.setAccessible(true);
+            return (String) f.get(user);
+        } catch (ReflectiveOperationException ex) {
+            throw new IllegalStateException(ex);
+        }
+    }
 
     @BeforeEach
     void setupClock() {
-        when(clock.instant()).thenReturn(now);
+        org.mockito.Mockito.lenient().when(clock.instant()).thenReturn(now);
     }
 
     @Test
@@ -74,12 +80,12 @@ class UserServiceTest {
     @Test
     void findAll_withoutSearch_callsFindAll() {
         Page<User> page = new PageImpl<>(List.of(User.create("a@b.com", "h", "A B", LocalDate.now())));
-        when(userRepository.findAll(any())).thenReturn(page);
+        when(userRepository.findAll(any(org.springframework.data.domain.Pageable.class))).thenReturn(page);
 
         Page<UserResponseDTO> result = userService.findAll(null, 0, 10);
 
         assertEquals(1, result.getTotalElements());
-        verify(userRepository).findAll(any());
+        verify(userRepository).findAll(any(org.springframework.data.domain.Pageable.class));
     }
 
     @Test
@@ -112,10 +118,10 @@ class UserServiceTest {
 
     @Test
     void register_successfulCreation() {
-        CreateUserRequest dto = new CreateUserRequest("Name", "c@d.com", "password123", LocalDate.of(1990,1,1));
+        CreateUserRequest dto = new CreateUserRequest("Name", "c@d.com", "password123", LocalDate.of(1990, 1, 1));
         when(userRepository.existsByEmailIgnoreCase("c@d.com")).thenReturn(false);
         when(passwordEncoder.encode("password123")).thenReturn("hash-1");
-        User created = User.create("c@d.com", "hash-1", "Name", LocalDate.of(1990,1,1));
+        User created = User.create("c@d.com", "hash-1", "Name", LocalDate.of(1990, 1, 1));
         when(userRepository.save(any())).thenReturn(created);
 
         Result<UserResponseDTO> result = userService.register(dto);
@@ -124,17 +130,6 @@ class UserServiceTest {
         assertEquals("c@d.com", result.getValue().email());
         verify(userRepository).save(userCaptor.capture());
         assertEquals("hash-1", /* saved password hash */ readPasswordHash(userCaptor.getValue()));
-    }
-
-    // Helper to access private passwordHash for assertion
-    private static String readPasswordHash(User user) {
-        try {
-            java.lang.reflect.Field f = User.class.getDeclaredField("passwordHash");
-            f.setAccessible(true);
-            return (String) f.get(user);
-        } catch (ReflectiveOperationException ex) {
-            throw new IllegalStateException(ex);
-        }
     }
 
     @Test
@@ -216,13 +211,27 @@ class UserServiceTest {
         UUID id = UUID.randomUUID();
         User user = User.create("old@ex.com", "h", "Old", LocalDate.now());
         when(userRepository.findById(id)).thenReturn(Optional.of(user));
-        when(userRepository.existsByEmailIgnoreCase("new@ex.com")).thenReturn(false);
+        when(userRepository.existsByEmailIgnoreCase(anyString())).thenReturn(false);
         when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         Result<UserResponseDTO> result = userService.changeEmail(id, new UpdateEmailRequest("  NEW@EX.com  "));
 
         assertTrue(result.isSuccess());
         assertEquals("new@ex.com", result.getValue().email());
+    }
+
+    @Test
+    void changeEmail_dataIntegrityViolationReturnsEmailExists() {
+        UUID id = UUID.randomUUID();
+        User user = User.create("old@ex.com", "h", "Old", LocalDate.now());
+        when(userRepository.findById(id)).thenReturn(Optional.of(user));
+        when(userRepository.existsByEmailIgnoreCase(anyString())).thenReturn(false);
+        when(userRepository.save(any())).thenThrow(new DataIntegrityViolationException("dup"));
+
+        Result<UserResponseDTO> result = userService.changeEmail(id, new UpdateEmailRequest("new@ex.com"));
+
+        assertTrue(result.isFailure());
+        assertEquals("USER_EMAIL_ALREADY_EXISTS", result.getError().code());
     }
 
     @Test
@@ -284,7 +293,7 @@ class UserServiceTest {
         UUID id = UUID.randomUUID();
         when(userRepository.findById(id)).thenReturn(Optional.empty());
 
-        Result<UserResponseDTO> result = userService.changeProfileInfo(id, new UpdateUserInfoRequest("Maria", LocalDate.of(1995,5,10)));
+        Result<UserResponseDTO> result = userService.changeProfileInfo(id, new UpdateUserInfoRequest("Maria", LocalDate.of(1995, 5, 10)));
 
         assertTrue(result.isFailure());
         assertEquals("USER_NOT_FOUND", result.getError().code());
@@ -293,11 +302,11 @@ class UserServiceTest {
     @Test
     void changeProfileInfo_success() {
         UUID id = UUID.randomUUID();
-        User user = User.create("z@x.com", "h", "Z X", LocalDate.of(1990,1,1));
+        User user = User.create("z@x.com", "h", "Z X", LocalDate.of(1990, 1, 1));
         when(userRepository.findById(id)).thenReturn(Optional.of(user));
         when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        Result<UserResponseDTO> result = userService.changeProfileInfo(id, new UpdateUserInfoRequest("  Maria Silva  ", LocalDate.of(1995,5,10)));
+        Result<UserResponseDTO> result = userService.changeProfileInfo(id, new UpdateUserInfoRequest("  Maria Silva  ", LocalDate.of(1995, 5, 10)));
 
         assertTrue(result.isSuccess());
         assertEquals("Maria Silva", result.getValue().fullName());

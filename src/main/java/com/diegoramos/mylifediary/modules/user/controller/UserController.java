@@ -1,6 +1,7 @@
 package com.diegoramos.mylifediary.modules.user.controller;
 
 import com.diegoramos.mylifediary.common.response.ResultHttpResponseHelper;
+import com.diegoramos.mylifediary.modules.user.domain.enums.UserStatus;
 import com.diegoramos.mylifediary.modules.user.dto.request.CreateUserRequest;
 import com.diegoramos.mylifediary.modules.user.dto.request.UpdateEmailRequest;
 import com.diegoramos.mylifediary.modules.user.dto.request.UpdatePasswordRequest;
@@ -8,6 +9,7 @@ import com.diegoramos.mylifediary.modules.user.dto.request.UpdateUserInfoRequest
 import com.diegoramos.mylifediary.modules.user.dto.response.UserResponseDTO;
 import com.diegoramos.mylifediary.modules.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -111,5 +114,19 @@ public class UserController {
     public ResponseEntity<?> reactivateUser(@PathVariable UUID userId) {
         return ResultHttpResponseHelper.respond(userService.restoreUser(userId), HttpStatus.ACCEPTED);
     }
-}
 
+    @GetMapping("/by-status")
+    @Operation(summary = "Lista usuários filtrados por status")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Usuários filtrados com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Falha ao aplicar o filtro"),
+            @ApiResponse(responseCode = "404", description = "Nenhum usuário encontrado")
+    })
+    public ResponseEntity<Page<UserResponseDTO>> findUsersByStatus(
+            @Parameter(description = "Lista de status para filtrar usuários. Ex.: ACTIVE, SUSPENDED")
+            @RequestParam List<UserStatus> statusList,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(userService.findUsersByStatus(statusList, page, size));
+    }
+}

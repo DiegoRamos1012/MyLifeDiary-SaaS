@@ -102,7 +102,8 @@ public class User extends BaseEntity {
             throw new DomainException("Erro: Nome não pode estar vazio");
         }
 
-        return new User(normalizeEmail(email), passwordHash, normalizeFullName(fullName), birthDate, UserStatus.ACTIVE);
+        // Constructor expects (fullName, email, passwordHash, birthDate, status)
+        return new User(normalizeFullName(fullName), normalizeEmail(email), passwordHash, birthDate, UserStatus.ACTIVE);
     }
 
     /**

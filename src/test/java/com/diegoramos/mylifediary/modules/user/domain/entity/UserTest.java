@@ -90,7 +90,7 @@ class UserTest {
     void updatePasswordShouldChangePasswordHash() {
         User user = createValidUser();
 
-        user.updatePassword("new-hash");
+        user.changePassword("new-hash");
 
         assertEquals("new-hash", readPasswordHash(user));
     }
@@ -100,7 +100,7 @@ class UserTest {
         User user = createValidUser();
         String previousPassword = readPasswordHash(user);
 
-        DomainException exception = assertThrows(DomainException.class, () -> user.updatePassword(null));
+        DomainException exception = assertThrows(DomainException.class, () -> user.changePassword(null));
 
         assertEquals("Erro: Senha inválida", exception.getMessage());
         assertEquals(previousPassword, readPasswordHash(user));
@@ -110,7 +110,7 @@ class UserTest {
     void updateProfileInfoShouldChangeProfile() {
         User user = createValidUser();
 
-        user.updateProfileInfo("  Maria Silva  ", LocalDate.of(1995, 5, 10));
+        user.changeProfileInfo("  Maria Silva  ", LocalDate.of(1995, 5, 10));
 
         assertEquals("Maria Silva", user.getFullName());
         assertEquals(LocalDate.of(1995, 5, 10), user.getBirthDate());
@@ -120,7 +120,7 @@ class UserTest {
     void updateProfileInfoShouldThrowWithoutChangingCurrentValue() {
         User user = createValidUser();
 
-        DomainException exception = assertThrows(DomainException.class, () -> user.updateProfileInfo("", LocalDate.of(1995, 5, 10)));
+        DomainException exception = assertThrows(DomainException.class, () -> user.changeProfileInfo("", LocalDate.of(1995, 5, 10)));
 
         assertEquals("Erro: Nome inválido", exception.getMessage());
         assertEquals("Diego Ramos", user.getFullName());
