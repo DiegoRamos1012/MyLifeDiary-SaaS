@@ -223,7 +223,7 @@ public class UserService {
 
                     LocalDate today = LocalDate.now(clock);
                     try {
-                        user.changeProfileInfo(targetFullName, targetBirthDate, today);
+                        user.changeProfileInfo(targetFullName, targetBirthDate);
                     } catch (DomainException ex) {
                         log.info("changeProfileInfo: domain error for userId={} reason={}", userId, ex.getMessage());
                         return Result.<UserResponseDTO>failure("USER_UPDATE_FAILED", ex.getMessage());
