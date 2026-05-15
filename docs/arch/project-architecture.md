@@ -17,7 +17,7 @@ O projeto é um backend Spring Boot organizado por **módulos de negócio** e po
 - separação clara entre regra de negócio, HTTP e persistência;
 - documentação próxima do código.
 
-Hoje o módulo funcional principal é `user`, mas a estrutura já está preparada para crescer por novos módulos seguindo o mesmo padrão.
+Hoje os módulos funcionais principais são `user` e `auth`, mas a estrutura já está preparada para crescer por novos módulos seguindo o mesmo padrão.
 
 ---
 
@@ -58,6 +58,12 @@ com.diegoramos.mylifediary
 ├── common
 ├── config
 └── modules
+    ├── auth
+    │   ├── controller
+    │   ├── domain
+    │   ├── dto
+    │   ├── repository
+    │   └── service
     └── user
         ├── controller
         ├── domain
@@ -113,6 +119,7 @@ Cada módulo de negócio deve viver aqui.
 
 Hoje existe o módulo:
 
+- `auth/`
 - `user/`
 
 Subpacotes:
@@ -123,6 +130,8 @@ Subpacotes:
 - `job/`
 - `repository/`
 - `service/`
+
+No módulo `auth`, o subpacote `job/` não existe; os fluxos ficam concentrados em controller, service, repository e domínio.
 
 ---
 

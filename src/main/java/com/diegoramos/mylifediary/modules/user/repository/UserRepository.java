@@ -31,6 +31,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      */
     boolean existsByEmailIgnoreCase(String email);
 
+    java.util.Optional<User> findByEmailIgnoreCase(String email);
+
     /**
      * Busca usuários por nome parcial (contém), ignorando caixa alta/baixa, com paginação.
      *

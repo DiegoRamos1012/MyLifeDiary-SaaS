@@ -3,6 +3,7 @@ package com.diegoramos.mylifediary.modules.user.domain.entity;
 import com.diegoramos.mylifediary.common.base.BaseEntity;
 import com.diegoramos.mylifediary.common.exception.DomainException;
 import com.diegoramos.mylifediary.modules.user.domain.enums.UserStatus;
+import com.diegoramos.mylifediary.modules.user.domain.enums.UserRole;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -48,6 +49,10 @@ public class User extends BaseEntity {
     @Column(name = "user_status", nullable = false)
     private UserStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false)
+    private UserRole role;
+
     @Column(name = "deletion_requested_at")
     private Instant deletionRequestedAt;
 
@@ -65,16 +70,18 @@ public class User extends BaseEntity {
      * @param birthDate    data de nascimento (opcional)
      * @param status       status inicial do usuário
      */
-    private User(String fullName,
-                 String email,
+    private User(String email,
                  String passwordHash,
+                 String fullName,
                  LocalDate birthDate,
-                 UserStatus status) {
+                 UserStatus status,
+                 UserRole role) {
         this.email = email;
         this.passwordHash = passwordHash;
         this.fullName = fullName;
         this.birthDate = birthDate;
         this.status = status;
+        this.role = role;
     }
 
     /**
@@ -102,8 +109,7 @@ public class User extends BaseEntity {
             throw new DomainException("Erro: nome não pode estar vazio");
         }
 
-        // Constructor expects (fullName, email, passwordHash, birthDate, status)
-        return new User(normalizeFullName(fullName), normalizeEmail(email), passwordHash, birthDate, UserStatus.ACTIVE);
+        return new User(normalizeEmail(email), passwordHash, normalizeFullName(fullName), birthDate, UserStatus.ACTIVE, UserRole.USER);
     }
 
     /**
@@ -185,13 +191,22 @@ public class User extends BaseEntity {
     }
 
     /**
+     * Retorna o hash da senha para uso interno de autenticação.
+     * Mantemos nome explícito para deixar claro o propósito.
+     */
+    public String getPasswordHash() {
+        return this.passwordHash;
+    }
+
+    /**
      * Atualiza informações do perfil do usuário (nome e data de nascimento).
      *
      * @param fullName  novo nome completo (obrigatório)
      * @param birthDate nova data de nascimento (opcional)
+     * @param today     data atual do Clock
      * @throws DomainException quando o nome for nulo ou vazio
      */
-    public void changeProfileInfo(String fullName, LocalDate birthDate) {
+    public void changeProfileInfo(String fullName, LocalDate birthDate, LocalDate today) {
         if (fullName == null || fullName.isBlank()) {
             throw new DomainException("Erro: nome inválido");
         }

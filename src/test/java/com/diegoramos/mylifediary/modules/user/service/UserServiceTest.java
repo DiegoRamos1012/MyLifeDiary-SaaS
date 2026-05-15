@@ -17,9 +17,12 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.Clock;
@@ -36,6 +39,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class UserServiceTest {
 
     private final Instant now = Instant.parse("2026-04-20T00:00:00Z");
@@ -63,7 +67,8 @@ class UserServiceTest {
 
     @BeforeEach
     void setupClock() {
-        org.mockito.Mockito.lenient().when(clock.instant()).thenReturn(now);
+        when(clock.instant()).thenReturn(now);
+        when(clock.getZone()).thenReturn(java.time.ZoneOffset.UTC);
     }
 
     @Test
@@ -80,29 +85,34 @@ class UserServiceTest {
     @Test
     void findAll_withoutSearch_callsFindAll() {
         Page<User> page = new PageImpl<>(List.of(User.create("a@b.com", "h", "A B", LocalDate.now())));
-        when(userRepository.findAll(any(org.springframework.data.domain.Pageable.class))).thenReturn(page);
+        when(userRepository.findAll(any(Pageable.class))).thenReturn(page);
 
         Page<UserResponseDTO> result = userService.findAll(null, 0, 10);
 
         assertEquals(1, result.getTotalElements());
-        verify(userRepository).findAll(any(org.springframework.data.domain.Pageable.class));
+        verify(userRepository).findAll(any(Pageable.class));
     }
 
     @Test
-    void findUsersByStatus_emptyList_returnsEmpty() {
-        Page<?> result = userService.findUsersByStatus(List.of(), 0, 10);
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
-    void findUsersByStatus_withList_callsRepository() {
+    void findUsersByStatus_withoutSearch_callsFindAll() {
         Page<User> page = new PageImpl<>(List.of(User.create("x@y.com", "h", "X Y", LocalDate.now())));
-        when(userRepository.findByStatusIn(eq(List.of(UserStatus.ACTIVE)), any())).thenReturn(page);
+        when(userRepository.findAll(any(Pageable.class))).thenReturn(page);
 
-        Page<UserResponseDTO> result = userService.findUsersByStatus(List.of(UserStatus.ACTIVE), 0, 10);
+        Page<UserResponseDTO> result = userService.findUsersByStatus(null, 0, 10);
 
         assertEquals(1, result.getTotalElements());
-        verify(userRepository).findByStatusIn(eq(List.of(UserStatus.ACTIVE)), any());
+        verify(userRepository).findAll(any(Pageable.class));
+    }
+
+    @Test
+    void findUsersByStatus_withSearch_callsRepository() {
+        Page<User> page = new PageImpl<>(List.of(User.create("x@y.com", "h", "X Y", LocalDate.now())));
+        when(userRepository.findByFullNameContainingIgnoreCase(eq("x"), any())).thenReturn(page);
+
+        Page<UserResponseDTO> result = userService.findUsersByStatus("x", 0, 10);
+
+        assertEquals(1, result.getTotalElements());
+        verify(userRepository).findByFullNameContainingIgnoreCase(eq("x"), any());
     }
 
     @Test
@@ -374,4 +384,3 @@ class UserServiceTest {
         assertEquals("USER_NOT_FOUND", result.getError().code());
     }
 }
-

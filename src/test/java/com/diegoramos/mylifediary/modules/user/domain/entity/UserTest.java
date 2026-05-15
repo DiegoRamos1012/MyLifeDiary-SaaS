@@ -44,7 +44,7 @@ class UserTest {
                 () -> User.create(" ", "hash-123", "Diego Ramos", LocalDate.of(1990, 1, 2))
         );
 
-        assertEquals("Erro: E-mail não pode estar vazio", exception.getMessage());
+        assertEquals("Erro: e-mail não pode estar vazio", exception.getMessage());
     }
 
     @Test
@@ -54,7 +54,7 @@ class UserTest {
                 () -> User.create("diego@example.com", "", "Diego Ramos", LocalDate.of(1990, 1, 2))
         );
 
-        assertEquals("Erro: Senha inválida", exception.getMessage());
+        assertEquals("Erro: senha inválida", exception.getMessage());
     }
 
     @Test
@@ -64,7 +64,7 @@ class UserTest {
                 () -> User.create("diego@example.com", "hash-123", null, LocalDate.of(1990, 1, 2))
         );
 
-        assertEquals("Erro: Nome não pode estar vazio", exception.getMessage());
+        assertEquals("Erro: nome não pode estar vazio", exception.getMessage());
     }
 
     @Test
@@ -87,7 +87,7 @@ class UserTest {
     }
 
     @Test
-    void updatePasswordShouldChangePasswordHash() {
+    void changePasswordShouldChangePasswordHash() {
         User user = createValidUser();
 
         user.changePassword("new-hash");
@@ -96,33 +96,34 @@ class UserTest {
     }
 
     @Test
-    void updatePasswordShouldThrowWithoutChangingCurrentValue() {
+    void changePasswordShouldThrowWithoutChangingCurrentValue() {
         User user = createValidUser();
         String previousPassword = readPasswordHash(user);
 
         DomainException exception = assertThrows(DomainException.class, () -> user.changePassword(null));
 
-        assertEquals("Erro: Senha inválida", exception.getMessage());
+        assertEquals("Erro: senha inválida", exception.getMessage());
         assertEquals(previousPassword, readPasswordHash(user));
     }
 
     @Test
-    void updateProfileInfoShouldChangeProfile() {
+    void changeProfileInfoShouldChangeProfile() {
         User user = createValidUser();
 
-        user.changeProfileInfo("  Maria Silva  ", LocalDate.of(1995, 5, 10));
+        user.changeProfileInfo("  Maria Silva  ", LocalDate.of(1995, 5, 10), LocalDate.of(2026, 5, 10));
 
         assertEquals("Maria Silva", user.getFullName());
         assertEquals(LocalDate.of(1995, 5, 10), user.getBirthDate());
     }
 
     @Test
-    void updateProfileInfoShouldThrowWithoutChangingCurrentValue() {
+    void changeProfileInfoShouldThrowWithoutChangingCurrentValue() {
         User user = createValidUser();
 
-        DomainException exception = assertThrows(DomainException.class, () -> user.changeProfileInfo("", LocalDate.of(1995, 5, 10)));
+        DomainException exception = assertThrows(DomainException.class, () ->
+                user.changeProfileInfo("", LocalDate.of(1995, 5, 10), LocalDate.of(2026, 5, 10)));
 
-        assertEquals("Erro: Nome inválido", exception.getMessage());
+        assertEquals("Erro: nome inválido", exception.getMessage());
         assertEquals("Diego Ramos", user.getFullName());
         assertEquals(LocalDate.of(1990, 1, 2), user.getBirthDate());
     }

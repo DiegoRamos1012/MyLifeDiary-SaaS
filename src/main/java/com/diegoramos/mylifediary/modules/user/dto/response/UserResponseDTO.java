@@ -12,6 +12,7 @@ public record UserResponseDTO(
         String fullName,
         LocalDate birthDate,
         String status,
+        String role,
         Instant createdAt
 ) {
     public static UserResponseDTO from(User user) {
@@ -21,6 +22,7 @@ public record UserResponseDTO(
                 user.getFullName(),
                 user.getBirthDate(),
                 user.getStatus().name(),
+                user.getRole() == null ? null : user.getRole().name(),
                 user.getCreatedAt()
         );
     }

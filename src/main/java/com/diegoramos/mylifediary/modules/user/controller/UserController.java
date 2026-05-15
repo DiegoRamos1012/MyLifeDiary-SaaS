@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -25,7 +26,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/users")
 @Tag(name = "Users", description = "Operações relacionadas a usuários")
-// @SecurityRequirement(name = bearerAuth)
+@SecurityRequirement(name = "bearerAuth")
 
 public class UserController {
 
@@ -48,7 +49,7 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    @Operation(summary = "Cria um novo usuário")
+    @Operation(summary = "Cria um novo usuário", security = {})
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Usuário criado com sucesso"),
             @ApiResponse(responseCode = "400", description = "Falha esperada ao criar usuário")

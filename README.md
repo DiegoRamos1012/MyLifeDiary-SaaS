@@ -13,7 +13,8 @@ Backend do **MyLifeDiary**, construído com **Spring Boot**, com foco em:
 
 ## Visão geral
 
-O projeto foi desenhado para manter o fluxo de negócio fácil de entender tanto por humanos quanto por agentes automatizados.
+O projeto foi desenhado para manter o fluxo de negócio fácil de entender tanto por humanos quanto por agentes
+automatizados.
 
 A base da arquitetura segue estes princípios:
 
@@ -23,6 +24,8 @@ A base da arquitetura segue estes princípios:
 - **repository** cuida da persistência;
 - **jobs** automatizam transições de estado de longa duração;
 - **common** concentra peças reutilizáveis do projeto.
+
+O projeto também já possui um módulo de autenticação JWT com emissão de access token e refresh token.
 
 ---
 
@@ -54,7 +57,7 @@ O projeto usa `Result` para representar **falhas esperadas** sem recorrer a exce
 
 A documentação detalhada está em:
 
-- [`docs/ResultPattern.md`](docs/ResultPattern.md)
+- [`docs/ResultPattern.md`](docs/arch/ResultPattern.md)
 
 ### Exceções de domínio
 
@@ -74,7 +77,7 @@ O projeto usa um helper para converter `Result` em resposta HTTP com corpo padro
 
 O módulo `user` possui fluxo de desativação e reativação documentado em detalhe.
 
-- [`docs/user-lifecycle-flow.md`](docs/user-lifecycle-flow.md)
+- [`docs/user-lifecycle-flow.md`](docs/arch/user-lifecycle-flow.md)
 
 ---
 
@@ -92,6 +95,12 @@ src/main/java/com/diegoramos/mylifediary
 │   ├── swagger
 │   └── time
 └── modules
+    ├── auth
+    │   ├── controller
+    │   ├── domain
+    │   ├── dto
+    │   ├── repository
+    │   └── service
     └── user
         ├── controller
         ├── domain
@@ -105,7 +114,7 @@ src/main/java/com/diegoramos/mylifediary
 
 Para entender o design do projeto com mais profundidade, veja:
 
-- [`docs/project-architecture.md`](docs/project-architecture.md)
+- [`docs/project-architecture.md`](docs/arch/project-architecture.md)
 
 Esse documento descreve:
 
@@ -132,6 +141,24 @@ O módulo de usuário já cobre:
 - desativação lógica;
 - restauração da conta;
 - jobs automáticos de ciclo de vida.
+
+### `auth`
+
+O módulo de autenticação cobre:
+
+- login com emissão de `accessToken` + `refreshToken`;
+- renovação de tokens via `POST /auth/refresh`;
+- logout via `POST /auth/logout`;
+- proteção de endpoints por JWT e roles.
+
+#### Resposta do login
+
+O `POST /auth/login` retorna um `AuthResponse` com os campos:
+
+- `accessToken`
+- `refreshToken`
+- `tokenType` (`Bearer`)
+- `expiresIn`
 
 ---
 
@@ -174,6 +201,9 @@ A documentação da API é exposta via configuração central de Swagger.
 
 Depois que a aplicação estiver rodando, a interface de documentação fica disponível no endpoint padrão do Springdoc.
 
+O esquema de autenticação usa `bearerAuth`; o `POST /auth/login` permanece público, enquanto os demais endpoints
+protegidos exigem token JWT no header `Authorization: Bearer <token>`.
+
 ---
 
 ## Convenções adotadas
@@ -202,13 +232,16 @@ A ideia do projeto é manter o backend:
 
 ## Documentos úteis
 
-- [`docs/project-architecture.md`](docs/project-architecture.md)
-- [`docs/ResultPattern.md`](docs/ResultPattern.md)
-- [`docs/user-lifecycle-flow.md`](docs/user-lifecycle-flow.md)
+- [`docs/project-architecture.md`](docs/arch/project-architecture.md)
+- [`docs/ResultPattern.md`](docs/arch/ResultPattern.md)
+- [`docs/user-lifecycle-flow.md`](docs/arch/user-lifecycle-flow.md)
+- [`docs/jwt-auth-plan.md`](docs/plans/jwt-auth-plan.md)
+- [`docs/refresh-token-plan.md`](docs/plans/refresh-token-plan.md)
 
 ---
 
 ## Observação
 
-Este repositório ainda está em evolução. A documentação foi pensada para acompanhar o código e servir como contexto confiável conforme novos módulos forem sendo adicionados.
+Este repositório ainda está em evolução. A documentação foi pensada para acompanhar o código e servir como contexto
+confiável conforme novos módulos forem sendo adicionados.
 
