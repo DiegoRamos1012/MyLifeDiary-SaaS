@@ -205,30 +205,197 @@ refreshTokenExpirationDays: long
 
 ## 10. Testes unitários
 
-Seguindo o padrão de `UserServiceTest` — Mockito, sem Spring context:
+Todos os testes seguem o mesmo padrão do projeto (`UserServiceTest` / `UserTest`): Mockito puro, sem Spring context, sem banco real. Localização dos arquivos:
 
-### `AuthServiceTest`
+```
+src/test/java/com/diegoramos/mylifediary/
+├── modules/auth/
+│   ├── domain/entity/
+│   │   └── RefreshTokenTest.java
+│   └── service/
+│       └── AuthServiceTest.java
+```
 
-Cenários para `refresh(...)`:
+---
 
-- token não encontrado → `AUTH_REFRESH_TOKEN_NOT_FOUND`
-- token revogado → `AUTH_REFRESH_TOKEN_REVOKED`
-- token expirado → `AUTH_REFRESH_TOKEN_EXPIRED`
-- token válido → sucesso, token antigo revogado, novo par emitido
+### 10.1 `RefreshTokenTest` — entidade de domínio
 
-Cenários para `logout(...)`:
+Espelha o padrão de `UserTest`: testa apenas os métodos públicos da entidade, sem mocks.
 
-- token não encontrado → `AUTH_REFRESH_TOKEN_NOT_FOUND`
-- token válido → sucesso, `revoked = true`
+**Setup (helper estático):**
 
-### `RefreshTokenTest`
+```java
+private static RefreshToken createValidToken() {
+    return RefreshToken.create(
+        UUID.randomUUID(),            // userId
+        "token-opaco-valido",
+        Instant.parse("2099-01-01T00:00:00Z")  // expiresAt no futuro
+    );
+}
+```
 
-Semelhante a `UserTest` — testa a entidade diretamente:
+**Cenários:**
 
-- `isExpired` retorna `true` quando `expiresAt` está no passado
-- `isExpired` retorna `false` quando ainda não expirou
-- `revoke()` altera o campo `revoked` para `true`
-- `RefreshToken.create(...)` com campos obrigatórios nulos lança `DomainException`
+| Método de teste | O que valida |
+|---|---|
+| `createShouldReturnTokenWithCorrectFields` | Todos os campos refletem os argumentos; `revoked` começa `false` |
+| `createShouldThrowWhenUserIdIsNull` | `RefreshToken.create(null, token, exp)` → `DomainException` |
+| `createShouldThrowWhenTokenIsBlank` | `RefreshToken.create(id, " ", exp)` → `DomainException` |
+| `createShouldThrowWhenExpiresAtIsNull` | `RefreshToken.create(id, token, null)` → `DomainException` |
+| `isExpiredShouldReturnTrueWhenPastExpiration` | `expiresAt` 1 segundo atrás → `isExpired(now)` retorna `true` |
+| `isExpiredShouldReturnFalseWhenBeforeExpiration` | `expiresAt` no futuro → `isExpired(now)` retorna `false` |
+| `isExpiredShouldReturnTrueWhenExactlyAtExpiration` | `expiresAt == now` → `isExpired(now)` retorna `true` (borda: expirado no instante exato) |
+| `revokeShouldSetRevokedToTrue` | Após `revoke()`, `isRevoked()` retorna `true` |
+| `revokeShouldBeIdempotent` | Chamar `revoke()` duas vezes não lança exceção e mantém `revoked == true` |
+
+**Exemplo de teste representativo:**
+
+```java
+@Test
+void isExpiredShouldReturnTrueWhenPastExpiration() {
+    Instant past = Instant.parse("2020-01-01T00:00:00Z");
+    RefreshToken token = RefreshToken.create(UUID.randomUUID(), "tok", past);
+    Instant now = Instant.parse("2026-05-15T00:00:00Z");
+
+    assertTrue(token.isExpired(now));
+}
+
+@Test
+void revokeShouldSetRevokedToTrue() {
+    RefreshToken token = createValidToken();
+    assertFalse(token.isRevoked());
+
+    token.revoke();
+
+    assertTrue(token.isRevoked());
+}
+```
+
+---
+
+### 10.2 `AuthServiceTest` — camada de serviço
+
+Espelha o padrão de `UserServiceTest`: `@ExtendWith(MockitoExtension.class)`, mocks via `@Mock`, `@InjectMocks`, `@Captor` e `Clock` fixo no `@BeforeEach`.
+
+**Setup da classe:**
+
+```java
+@ExtendWith(MockitoExtension.class)
+class AuthServiceTest {
+
+    @Mock private RefreshTokenRepository refreshTokenRepository;
+    @Mock private UserRepository userRepository;
+    @Mock private JwtService jwtService;
+    @Mock private Clock clock;
+
+    @InjectMocks private AuthService authService;
+
+    @Captor private ArgumentCaptor<RefreshToken> tokenCaptor;
+
+    private final Instant now = Instant.parse("2026-05-15T00:00:00Z");
+
+    @BeforeEach
+    void setupClock() {
+        when(clock.instant()).thenReturn(now);
+    }
+}
+```
+
+---
+
+#### Cenários para `refresh(RefreshRequest dto)`
+
+| Método de teste | Condição simulada | Resultado esperado |
+|---|---|---|
+| `refresh_tokenNotFound_returnsFailure` | `findByToken` retorna `Optional.empty()` | `isFailure()` com código `AUTH_REFRESH_TOKEN_NOT_FOUND` |
+| `refresh_tokenRevoked_returnsFailure` | Token com `revoked = true` | `isFailure()` com código `AUTH_REFRESH_TOKEN_REVOKED` |
+| `refresh_tokenExpired_returnsFailure` | Token com `expiresAt` no passado e `revoked = false` | `isFailure()` com código `AUTH_REFRESH_TOKEN_EXPIRED` |
+| `refresh_validToken_revokesOldToken` | Token válido | `tokenCaptor` captura o token salvo com `revoked = true` |
+| `refresh_validToken_savesNewToken` | Token válido | `save` é chamado 2 vezes: revogar o antigo + salvar o novo |
+| `refresh_validToken_returnsNewAccessToken` | Token válido, `JwtService` retorna `"novo-jwt"` | `result.getValue().accessToken()` é `"novo-jwt"` |
+| `refresh_validToken_returnsNewRefreshToken` | Token válido | `result.getValue().refreshToken()` é diferente do token original |
+
+**Exemplo de teste representativo:**
+
+```java
+@Test
+void refresh_tokenRevoked_returnsFailure() {
+    RefreshToken revoked = buildToken(now.plusSeconds(3600), /* revoked= */ true);
+    when(refreshTokenRepository.findByToken("tok")).thenReturn(Optional.of(revoked));
+
+    Result<AuthResponse> result = authService.refresh(new RefreshRequest("tok"));
+
+    assertTrue(result.isFailure());
+    assertEquals("AUTH_REFRESH_TOKEN_REVOKED", result.getError().code());
+    verify(refreshTokenRepository, never()).save(any());
+}
+
+@Test
+void refresh_validToken_revokesOldToken() {
+    RefreshToken valid = buildToken(now.plusSeconds(3600), false);
+    when(refreshTokenRepository.findByToken("tok")).thenReturn(Optional.of(valid));
+    when(jwtService.generateToken(any())).thenReturn("novo-jwt");
+    when(refreshTokenRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+    authService.refresh(new RefreshRequest("tok"));
+
+    verify(refreshTokenRepository, atLeastOnce()).save(tokenCaptor.capture());
+    // o primeiro save deve ser o token antigo com revoked = true
+    assertTrue(tokenCaptor.getAllValues().get(0).isRevoked());
+}
+```
+
+---
+
+#### Cenários para `logout(RefreshRequest dto)`
+
+| Método de teste | Condição simulada | Resultado esperado |
+|---|---|---|
+| `logout_tokenNotFound_returnsFailure` | `findByToken` retorna `Optional.empty()` | `isFailure()` com código `AUTH_REFRESH_TOKEN_NOT_FOUND` |
+| `logout_validToken_revokesToken` | Token encontrado | `save` é chamado com o token marcado como `revoked = true` |
+| `logout_validToken_returnsSuccess` | Token encontrado | `result.isSuccess()` é `true` |
+| `logout_alreadyRevokedToken_stillSucceeds` | Token já revogado | Não lança exceção; `revoke()` é idempotente; `save` é chamado |
+
+**Exemplo de teste representativo:**
+
+```java
+@Test
+void logout_validToken_revokesToken() {
+    RefreshToken token = buildToken(now.plusSeconds(3600), false);
+    when(refreshTokenRepository.findByToken("tok")).thenReturn(Optional.of(token));
+    when(refreshTokenRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+    Result<?> result = authService.logout(new RefreshRequest("tok"));
+
+    assertTrue(result.isSuccess());
+    verify(refreshTokenRepository).save(tokenCaptor.capture());
+    assertTrue(tokenCaptor.getValue().isRevoked());
+}
+```
+
+---
+
+#### Helper privado reutilizado nos testes do serviço
+
+```java
+// Cria um RefreshToken com campos controlados via reflexão (mesmo padrão
+// de readPasswordHash em UserServiceTest) ou via fábrica da própria entidade.
+private RefreshToken buildToken(Instant expiresAt, boolean revoked) {
+    RefreshToken token = RefreshToken.create(UUID.randomUUID(), "tok", expiresAt);
+    if (revoked) token.revoke();
+    return token;
+}
+```
+
+---
+
+### 10.3 Cobertura mínima esperada
+
+| Classe | Cenários mínimos | Meta |
+|---|---|---|
+| `RefreshToken` | 9 cenários (entidade) | 100% dos métodos públicos |
+| `AuthService#refresh` | 7 cenários | todos os ramos do `switch` / `if` |
+| `AuthService#logout` | 4 cenários | caminho feliz + não encontrado + idempotência |
 
 ---
 
