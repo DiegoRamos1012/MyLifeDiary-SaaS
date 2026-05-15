@@ -4,6 +4,8 @@
 >
 > Objetivo: inserir autenticação JWT no projeto mantendo a simplicidade, seguindo os padrões já estabelecidos e preparando o sistema para integração futura com provedores externos (OAuth2).
 
+> **Estado atual no repositório:** a autenticação JWT básica e a rotação de refresh token já foram implementadas. Este documento permanece como referência de arquitetura e decisão técnica.
+
 ---
 
 ## 1. Visão geral da abordagem
@@ -98,6 +100,7 @@ Campos:
 
 Campos:
 - `accessToken` — o token JWT gerado
+- `refreshToken` — token opaco de longa duração salvo no banco
 - `tokenType` — sempre `"Bearer"`
 - `expiresIn` — duração em segundos
 
@@ -107,7 +110,9 @@ Responsabilidade:
 1. verificar se o usuário existe pelo e-mail;
 2. verificar se a senha fornecida bate com o hash (`PasswordEncoder#matches`);
 3. verificar se o status da conta é `ACTIVE` (bloquear `SUSPENDED`, `INACTIVE`, `PENDING_DELETION`);
-4. gerar e retornar o JWT.
+4. gerar e retornar o par de tokens do login (`accessToken` + `refreshToken`).
+
+> A renovação e o logout por refresh token foram adicionados posteriormente e estão documentados em `docs/refresh-token-plan.md`.
 
 Retorna `Result<AuthResponse>` para falhas esperadas:
 - `AUTH_INVALID_CREDENTIALS` → e-mail não encontrado ou senha incorreta (mensagem genérica por segurança)
@@ -122,6 +127,13 @@ Endpoint único nesta fase:
 | Método | Rota           | Acesso     | Descrição                   |
 |--------|----------------|------------|-----------------------------|
 | POST   | `/auth/login`  | público    | Autentica e retorna o token |
+
+Na implementação atual do repositório, o módulo `auth` também expõe:
+
+| Método | Rota            | Acesso  | Descrição                                      |
+|--------|-----------------|---------|------------------------------------------------|
+| POST   | `/auth/refresh` | público | Renova access token e refresh token            |
+| POST   | `/auth/logout`  | público | Revoga o refresh token informado               |
 
 Segue o padrão do projeto:
 - `@Valid` no request
@@ -275,9 +287,14 @@ modules/auth/controller/AuthController.java
 modules/auth/service/AuthService.java
 modules/auth/dto/request/LoginRequest.java
 modules/auth/dto/response/AuthResponse.java
+modules/auth/dto/request/RefreshRequest.java
+modules/auth/domain/entity/RefreshToken.java
+modules/auth/repository/RefreshTokenRepository.java
 config/security/JwtProperties.java
 config/security/JwtService.java
 config/security/UserDetailsServiceImpl.java
+src/main/resources/db/migration/V1__create_users.sql
+src/main/resources/db/migration/V3__create_refresh_tokens.sql
 ```
 
 ### Modificados

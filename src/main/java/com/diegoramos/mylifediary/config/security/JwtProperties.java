@@ -12,6 +12,9 @@ public class JwtProperties {
     @Value("${jwt.expiration:3600}")
     private long expirationSeconds;
 
+    @Value("${jwt.refresh-token.expiration-days:7}")
+    private long refreshTokenExpirationDays;
+
     public String getSecret() {
         return secret;
     }
@@ -20,10 +23,19 @@ public class JwtProperties {
         return expirationSeconds;
     }
 
+    public long getRefreshTokenExpirationDays() {
+        return refreshTokenExpirationDays;
+    }
+
     // Public constructor to ease testing and manual instantiation
     public JwtProperties(String secret, long expirationSeconds) {
+        this(secret, expirationSeconds, 7L);
+    }
+
+    public JwtProperties(String secret, long expirationSeconds, long refreshTokenExpirationDays) {
         this.secret = secret;
         this.expirationSeconds = expirationSeconds;
+        this.refreshTokenExpirationDays = refreshTokenExpirationDays;
     }
 
     public JwtProperties() {

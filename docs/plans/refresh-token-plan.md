@@ -6,6 +6,8 @@
 >
 > **Escopo desta branch:** apenas o refresh token — emissão, renovação e logout. Autorização de rotas protegidas fica para uma branch dedicada posterior.
 
+> **Estado atual no repositório:** o fluxo de refresh token já está implementado junto com login e logout em `modules/auth/`.
+
 ---
 
 ## 1. O que o refresh token resolve
@@ -405,6 +407,7 @@ private RefreshToken buildToken(Instant expiresAt, boolean revoked) {
 
 ```
 docs/refresh-token-plan.md                                      ← este arquivo
+src/main/resources/db/migration/V1__create_users.sql
 src/main/resources/db/migration/V3__create_refresh_tokens.sql
 modules/auth/domain/entity/RefreshToken.java
 modules/auth/repository/RefreshTokenRepository.java

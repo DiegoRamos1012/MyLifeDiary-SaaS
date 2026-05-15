@@ -2,6 +2,7 @@ package com.diegoramos.mylifediary.modules.auth.controller;
 
 import com.diegoramos.mylifediary.common.response.ResultHttpResponseHelper;
 import com.diegoramos.mylifediary.modules.auth.dto.request.LoginRequest;
+import com.diegoramos.mylifediary.modules.auth.dto.request.RefreshRequest;
 import com.diegoramos.mylifediary.modules.auth.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -35,6 +36,28 @@ public class AuthController {
     })
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         return ResultHttpResponseHelper.respond(authService.authenticate(request), HttpStatus.OK);
+    }
+
+    @PostMapping("/refresh")
+    @Operation(summary = "Renova access token e refresh token")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Tokens renovados com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Payload inválido"),
+            @ApiResponse(responseCode = "401", description = "Refresh token inválido, revogado ou expirado")
+    })
+    public ResponseEntity<?> refresh(@Valid @RequestBody RefreshRequest request) {
+        return ResultHttpResponseHelper.respond(authService.refresh(request), HttpStatus.OK);
+    }
+
+    @PostMapping("/logout")
+    @Operation(summary = "Revoga o refresh token informado")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Logout realizado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Payload inválido"),
+            @ApiResponse(responseCode = "401", description = "Refresh token inválido ou inexistente")
+    })
+    public ResponseEntity<?> logout(@Valid @RequestBody RefreshRequest request) {
+        return ResultHttpResponseHelper.respond(authService.logout(request), HttpStatus.NO_CONTENT);
     }
 }
 
