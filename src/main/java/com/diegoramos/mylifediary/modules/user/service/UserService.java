@@ -2,6 +2,7 @@ package com.diegoramos.mylifediary.modules.user.service;
 
 import com.diegoramos.mylifediary.common.exception.DomainException;
 import com.diegoramos.mylifediary.common.result.Result;
+import com.diegoramos.mylifediary.common.util.TextNormalizer;
 import com.diegoramos.mylifediary.modules.user.domain.entity.User;
 import com.diegoramos.mylifediary.modules.user.domain.enums.UserStatus;
 import com.diegoramos.mylifediary.modules.user.dto.request.CreateUserRequest;
@@ -127,7 +128,7 @@ public class UserService {
      */
     public Result<UserResponseDTO> changeEmail(UUID userId, @NonNull UpdateEmailRequest dto) {
         return userRepository.findById(userId)
-                .map(user -> switch (dto.newEmail() == null ? null : dto.newEmail().trim()) {
+                .map(user -> switch (TextNormalizer.trim(dto.newEmail())) {
                     case null -> Result.<UserResponseDTO>failure("USER_INVALID_EMAIL", "E-mail inválido");
                     case "" -> Result.<UserResponseDTO>failure("USER_INVALID_EMAIL", "E-mail inválido");
                     case String requestedEmail when requestedEmail.equalsIgnoreCase(user.getEmail()) ->

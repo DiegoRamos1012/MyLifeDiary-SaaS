@@ -2,6 +2,8 @@ package com.diegoramos.mylifediary.modules.user.domain.entity;
 
 import com.diegoramos.mylifediary.common.base.BaseEntity;
 import com.diegoramos.mylifediary.common.exception.DomainException;
+import com.diegoramos.mylifediary.common.util.DomainValidation;
+import com.diegoramos.mylifediary.common.util.TextNormalizer;
 import com.diegoramos.mylifediary.modules.user.domain.enums.UserRole;
 import com.diegoramos.mylifediary.modules.user.domain.enums.UserStatus;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -9,7 +11,6 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.jspecify.annotations.NonNull;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -83,6 +84,11 @@ public class User extends BaseEntity {
         this.role = role;
     }
 
+    @JsonIgnore
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
     /**
      * Fábrica para criar um usuário com validações básicas de presença.
      *
@@ -97,38 +103,23 @@ public class User extends BaseEntity {
      * @return instância de {@link User} preparada com status {@code ACTIVE}
      * @throws DomainException quando algum campo obrigatório estiver ausente ou inválido
      */
-    public static User create(String email, String passwordHash, String fullName, LocalDate birthDate) {
-        if (email == null || email.isBlank()) {
-            throw new DomainException("Erro: e-mail não pode estar vazio");
-        }
-        if (passwordHash == null || passwordHash.isBlank()) {
-            throw new DomainException("Erro: senha inválida");
-        }
-        if (fullName == null || fullName.isBlank()) {
-            throw new DomainException("Erro: nome não pode estar vazio");
-        }
+    public static User create(String email,
+                              String passwordHash,
+                              String fullName,
+                              LocalDate birthDate) {
 
-        return new User(normalizeEmail(email), passwordHash, normalizeFullName(fullName), birthDate, UserStatus.ACTIVE, UserRole.USER);
-    }
+        DomainValidation.validateRequired(email, "E-mail");
+        DomainValidation.validateRequired(passwordHash, "Senha");
+        DomainValidation.validateRequired(fullName, "Nome");
 
-    /**
-     * Normaliza o e-mail para armazenamento e comparação: trim + lowercase.
-     *
-     * @param email e-mail bruto
-     * @return e-mail normalizado
-     */
-    private static String normalizeEmail(@NonNull String email) {
-        return email.trim().toLowerCase();
-    }
-
-    /**
-     * Normaliza o nome completo removendo espaços laterais.
-     *
-     * @param fullName nome bruto
-     * @return nome normalizado
-     */
-    private static String normalizeFullName(@NonNull String fullName) {
-        return fullName.trim();
+        return new User(
+                TextNormalizer.email(email),
+                passwordHash,
+                TextNormalizer.name(fullName),
+                birthDate,
+                UserStatus.ACTIVE,
+                UserRole.USER
+        );
     }
 
     /**
@@ -170,7 +161,7 @@ public class User extends BaseEntity {
         if (newEmail == null || newEmail.isBlank()) {
             throw new DomainException("Erro: E-mail inválido");
         }
-        this.email = normalizeEmail(newEmail);
+        this.email = TextNormalizer.email(newEmail);
         updateLastTimeChanged();
     }
 
@@ -206,7 +197,7 @@ public class User extends BaseEntity {
             throw new DomainException("Erro: data inválida");
         }
 
-        this.fullName = normalizeFullName(fullName);
+        this.fullName = TextNormalizer.name(fullName);
         this.birthDate = birthDate;
     }
 }
