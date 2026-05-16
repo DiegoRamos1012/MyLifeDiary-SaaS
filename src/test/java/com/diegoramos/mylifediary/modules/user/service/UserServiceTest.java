@@ -94,25 +94,21 @@ class UserServiceTest {
     }
 
     @Test
-    void findUsersByStatus_withoutSearch_callsFindAll() {
-        Page<User> page = new PageImpl<>(List.of(User.create("x@y.com", "h", "X Y", LocalDate.now())));
-        when(userRepository.findAll(any(Pageable.class))).thenReturn(page);
-
+    void findUsersByStatus_withoutSearch_returnsEmpty() {
         Page<UserResponseDTO> result = userService.findUsersByStatus(null, 0, 10);
 
-        assertEquals(1, result.getTotalElements());
-        verify(userRepository).findAll(any(Pageable.class));
+        assertEquals(0, result.getTotalElements());
     }
 
     @Test
-    void findUsersByStatus_withSearch_callsRepository() {
+    void findUsersByStatus_withStatus_callsRepository() {
         Page<User> page = new PageImpl<>(List.of(User.create("x@y.com", "h", "X Y", LocalDate.now())));
-        when(userRepository.findByFullNameContainingIgnoreCase(eq("x"), any())).thenReturn(page);
+        when(userRepository.findByStatusIn(eq(List.of(UserStatus.ACTIVE)), any())).thenReturn(page);
 
-        Page<UserResponseDTO> result = userService.findUsersByStatus("x", 0, 10);
+        Page<UserResponseDTO> result = userService.findUsersByStatus(List.of(UserStatus.ACTIVE), 0, 10);
 
         assertEquals(1, result.getTotalElements());
-        verify(userRepository).findByFullNameContainingIgnoreCase(eq("x"), any());
+        verify(userRepository).findByStatusIn(eq(List.of(UserStatus.ACTIVE)), any());
     }
 
     @Test

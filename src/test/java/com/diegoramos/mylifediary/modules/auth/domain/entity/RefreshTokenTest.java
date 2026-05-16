@@ -104,4 +104,3 @@ class RefreshTokenTest {
         assertTrue(token.isRevoked());
     }
 }
-

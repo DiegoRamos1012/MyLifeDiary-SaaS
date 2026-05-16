@@ -10,4 +10,3 @@ CREATE TABLE IF NOT EXISTS users (
     role               VARCHAR(20) NOT NULL DEFAULT 'USER',
     deletion_requested_at TIMESTAMP WITH TIME ZONE
 );
-

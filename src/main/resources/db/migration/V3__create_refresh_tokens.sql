@@ -7,4 +7,3 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
     created_at TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
-

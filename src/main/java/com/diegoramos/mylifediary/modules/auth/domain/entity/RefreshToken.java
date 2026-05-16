@@ -1,11 +1,9 @@
 package com.diegoramos.mylifediary.modules.auth.domain.entity;
 
+import com.diegoramos.mylifediary.common.base.BaseEntity;
 import com.diegoramos.mylifediary.common.exception.DomainException;
-import com.github.f4b6a3.uuid.UuidCreator;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -18,11 +16,7 @@ import java.util.UUID;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "refresh_tokens")
-public class RefreshToken {
-
-	@Id
-	@Column(updatable = false, nullable = false)
-	private UUID id;
+public class RefreshToken extends BaseEntity {
 
 	@Column(name = "user_id", nullable = false, updatable = false)
 	private UUID userId;
@@ -36,8 +30,6 @@ public class RefreshToken {
 	@Column(nullable = false)
 	private boolean revoked;
 
-	@Column(name = "created_at", nullable = false, updatable = false)
-	private Instant createdAt;
 
 	private RefreshToken(UUID userId, String token, Instant expiresAt) {
 		this.userId = userId;
@@ -60,15 +52,6 @@ public class RefreshToken {
 		return new RefreshToken(userId, token, expiresAt);
 	}
 
-	@PrePersist
-	void onCreate() {
-		if (id == null) {
-			id = UuidCreator.getTimeOrderedEpoch();
-		}
-		if (createdAt == null) {
-			createdAt = Instant.now();
-		}
-	}
 
 	public boolean isExpired(Instant now) {
 		if (now == null) {
@@ -81,4 +64,3 @@ public class RefreshToken {
 		this.revoked = true;
 	}
 }
-

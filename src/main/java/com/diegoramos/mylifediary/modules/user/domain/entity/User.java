@@ -2,8 +2,8 @@ package com.diegoramos.mylifediary.modules.user.domain.entity;
 
 import com.diegoramos.mylifediary.common.base.BaseEntity;
 import com.diegoramos.mylifediary.common.exception.DomainException;
-import com.diegoramos.mylifediary.modules.user.domain.enums.UserStatus;
 import com.diegoramos.mylifediary.modules.user.domain.enums.UserRole;
+import com.diegoramos.mylifediary.modules.user.domain.enums.UserStatus;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -38,7 +38,6 @@ public class User extends BaseEntity {
     private String email;
 
     @JsonIgnore
-    @Getter(AccessLevel.NONE)
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
@@ -188,14 +187,6 @@ public class User extends BaseEntity {
         }
         this.passwordHash = newPasswordHash;
         updateLastTimeChanged();
-    }
-
-    /**
-     * Retorna o hash da senha para uso interno de autenticação.
-     * Mantemos nome explícito para deixar claro o propósito.
-     */
-    public String getPasswordHash() {
-        return this.passwordHash;
     }
 
     /**
