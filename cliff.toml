@@ -1,0 +1,58 @@
+[changelog]
+body = """
+{% if version %}
+## {{ version | trim_start_matches(pat="v") }} - {{ timestamp | default(value=now()) | date(format="%Y-%m-%d") }}
+{% else %}
+## unreleased - {{ now() | date(format="%Y-%m-%d") }}
+{% endif %}
+
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group }}
+
+{% for commit in commits %}
+- {{ commit.message }}{% if commit.scope %} (`{{ commit.scope }}`){% endif %}{% if commit.breaking %} ⚠️ BREAKING{% endif %}
+{% endfor %}
+
+{% endfor %}
+"""
+
+trim = true
+render_always = true
+
+[git]
+conventional_commits = true
+filter_unconventional = false
+
+commit_parsers = [
+    # 🚀 Features
+    { message = "^feat", group = "🚀 Features" },
+    # 🐛 Fixes
+    { message = "^fix", group = "🐛 Fixes" },
+    # 📚 Docs
+    { message = "^doc", group = "📚 Docs" },
+    # 🔧 Refactor
+    { message = "^refactor", group = "🔧 Refactor" },
+    # ⚡ Performance
+    { message = "^perf", group = "⚡ Performance" },
+    # 🧪 Tests
+    { message = "^test", group = "🧪 Tests" },
+    # ⚙️ Maintenance
+    { message = "^chore|^ci", group = "⚙️ Maintenance" },
+    # ❌ IGNORADOS (DEV NOISE + MERGES)
+    { message = "^a$", skip = true },
+    { message = "^\\.$", skip = true },
+    { message = "^atualização$", skip = true },
+    { message = "^fast refac", skip = true },
+    { message = "^merge", skip = true },
+    { message = "^Merge", skip = true },
+    { message = "^merge branch", skip = true },
+    { message = "^Merge branch", skip = true },
+    { message = "^merge pull request", skip = true },
+    { message = "^Merge pull request", skip = true },
+    { message = "^resolve conflicts", skip = true },
+    { message = "^conflict", skip = true },
+    # 💼 fallback (SEMPRE POR ÚLTIMO)
+    { message = ".*", group = "💼 Other" }
+]
+
+sort_commits = "oldest"
