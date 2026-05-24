@@ -64,7 +64,7 @@ public final class ResultHttpResponseHelper {
     private static HttpStatus mapErrorStatus(ResultError error) {
         return switch (error.code()) {
             case "USER_EMAIL_ALREADY_EXISTS" -> HttpStatus.CONFLICT;
-            case "USER_NOT_FOUND" -> HttpStatus.NOT_FOUND;
+            case "USER_NOT_FOUND", "HABIT_NOT_FOUND", "HABIT_USER_NOT_FOUND" -> HttpStatus.NOT_FOUND;
             case "AUTH_INVALID_CREDENTIALS", "AUTH_ACCOUNT_NOT_ACTIVE",
                  "AUTH_REFRESH_TOKEN_NOT_FOUND", "AUTH_REFRESH_TOKEN_REVOKED", "AUTH_REFRESH_TOKEN_EXPIRED" -> HttpStatus.UNAUTHORIZED;
             default -> HttpStatus.BAD_REQUEST;

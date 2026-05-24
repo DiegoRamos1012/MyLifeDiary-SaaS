@@ -44,7 +44,7 @@ class UserTest {
                 () -> User.create(" ", "hash-123", "Diego Ramos", LocalDate.of(1990, 1, 2))
         );
 
-        assertEquals("Erro: e-mail não pode estar vazio", exception.getMessage());
+        assertEquals("E-mail não pode estar vazio", exception.getMessage());
     }
 
     @Test
@@ -54,7 +54,7 @@ class UserTest {
                 () -> User.create("diego@example.com", "", "Diego Ramos", LocalDate.of(1990, 1, 2))
         );
 
-        assertEquals("Erro: senha inválida", exception.getMessage());
+        assertEquals("Senha não pode estar vazio", exception.getMessage());
     }
 
     @Test
@@ -64,7 +64,7 @@ class UserTest {
                 () -> User.create("diego@example.com", "hash-123", null, LocalDate.of(1990, 1, 2))
         );
 
-        assertEquals("Erro: nome não pode estar vazio", exception.getMessage());
+        assertEquals("Nome não pode estar vazio", exception.getMessage());
     }
 
     @Test
