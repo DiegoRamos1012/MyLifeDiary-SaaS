@@ -1,4 +1,4 @@
-package com.diegoramos.mylifediary.modules.journal.domain.repository;
+package com.diegoramos.mylifediary.modules.journal.repository;
 
 import com.diegoramos.mylifediary.modules.journal.domain.entity.Journal;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,3 +9,4 @@ import java.util.UUID;
 @Repository
 public interface JournalRepository extends JpaRepository<Journal, UUID> {
 }
+

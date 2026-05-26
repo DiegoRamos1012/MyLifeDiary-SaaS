@@ -19,13 +19,13 @@ public abstract class BaseEntity {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    @Column(name = "last_time_changed", nullable = false, updatable = false)
-    private Instant lastTimeChanged;
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
 
     /**
      * Executa automaticamente antes do INSERT.
      * Define o {@code id} como UUID v7 e inicializa {@code createdAt} e
-     * {@code lastTimeChanged} com o horário atual em UTC.
+     * {@code updatedAt} com o horário atual em UTC.
      */
     @PrePersist
     protected void onCreate() {
@@ -33,7 +33,7 @@ public abstract class BaseEntity {
             id = UuidCreator.getTimeOrderedEpoch();
         }
         createdAt = Instant.now();
-        lastTimeChanged = createdAt;
+        updatedAt = createdAt;
     }
 
     /**
@@ -41,10 +41,10 @@ public abstract class BaseEntity {
      */
     @PreUpdate
     protected void onUpdate() {
-        lastTimeChanged = Instant.now();
+        updatedAt = Instant.now();
     }
 
     protected void updateLastTimeChanged() {
-        this.lastTimeChanged = Instant.now();
+        this.updatedAt = Instant.now();
     }
 }

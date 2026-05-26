@@ -1,4 +1,4 @@
-package com.diegoramos.mylifediary.modules.journal.domain.repository;
+package com.diegoramos.mylifediary.modules.journal.repository;
 
 import com.diegoramos.mylifediary.modules.journal.domain.entity.JournalEntry;
 import org.springframework.data.domain.Page;
@@ -63,3 +63,4 @@ public interface JournalEntryRepository extends JpaRepository<JournalEntry, UUID
      */
     long countByJournalId(UUID journalId);
 }
+

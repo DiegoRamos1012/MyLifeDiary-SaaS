@@ -38,18 +38,18 @@ public class JournalEntry extends BaseEntity {
         this.mood = mood;
     }
 
-    private static JournalEntry create(Journal journal,
-                                       String content,
-                                       MoodTypes mood) {
+    public static JournalEntry create(Journal journal,
+                                      String content,
+                                      MoodTypes mood) {
 
         DomainValidation.validateRequired(journal, "O diário");
         DomainValidation.validateRequired(content, "O conteúdo do diário");
         DomainValidation.validateRequired(mood, "O humor do dia");
 
         if (content.length() > 20000) {
-            throw new DomainException("O limite máximo do diário é de 20.000 caracteres")
+            throw new DomainException("O limite máximo do diário é de 20.000 caracteres");
         }
 
-        return new JournalEntry(journal, content, mood );
+        return new JournalEntry(journal, content, mood);
     }
 }

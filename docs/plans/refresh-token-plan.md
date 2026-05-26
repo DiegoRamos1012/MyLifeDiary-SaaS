@@ -62,7 +62,7 @@ Campos:
 | `revoked`    | `boolean` | se foi invalidado                       |
 | `createdAt`  | `Instant` | gerado no `@PrePersist`                 |
 
-> **Nota de design:** `RefreshToken` **não estende `BaseEntity`** — os campos `lastTimeChanged` e `updatedAt` não fazem sentido aqui, e a entidade é essencialmente imutável após criação. O `@PrePersist` local define apenas `id` e `createdAt`.
+> **Nota de design:** `RefreshToken` **não estende `BaseEntity`** — o campo `updatedAt` não faz sentido aqui, e a entidade é essencialmente imutável após criação. O `@PrePersist` local define apenas `id` e `createdAt`.
 
 Métodos:
 
