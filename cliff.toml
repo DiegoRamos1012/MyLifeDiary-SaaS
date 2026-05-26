@@ -38,7 +38,7 @@ commit_parsers = [
     { message = "^test", group = "🧪 Tests" },
     # ⚙️ Maintenance
     { message = "^chore|^ci", group = "⚙️ Maintenance" },
-    # ❌ IGNORADOS (DEV NOISE + MERGES)
+    # ❌ IGNORADOS
     { message = "^a$", skip = true },
     { message = "^\\.$", skip = true },
     { message = "^atualização$", skip = true },
