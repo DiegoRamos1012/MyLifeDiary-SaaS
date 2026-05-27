@@ -1,4 +1,5 @@
 package com.diegoramos.mylifediary.modules.habit.service;
+
 import com.diegoramos.mylifediary.common.exception.DomainException;
 import com.diegoramos.mylifediary.common.result.Result;
 import com.diegoramos.mylifediary.modules.habit.domain.entity.Habit;
@@ -15,6 +16,7 @@ import com.diegoramos.mylifediary.modules.user.repository.UserRepository;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
@@ -22,6 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
 /**
  * Serviço de aplicação responsável pelos casos de uso do módulo de hábitos.
  *
@@ -35,7 +38,10 @@ public class HabitService {
     private final HabitLogRepository habitLogRepository;
     private final UserRepository userRepository;
     private final Clock clock;
-    /** Cria uma nova instância do serviço com as dependências necessárias. */
+
+    /**
+     * Cria uma instância do serviço com as dependências necessárias.
+     */
     public HabitService(HabitRepository habitRepository,
                         HabitLogRepository habitLogRepository,
                         UserRepository userRepository,
@@ -45,11 +51,14 @@ public class HabitService {
         this.userRepository = userRepository;
         this.clock = clock;
     }
-    /** Cria um hábito para o usuário informado. */
+
+    /**
+     * Cria um hábito para o usuário informado.
+     */
     public Result<HabitResponseDTO> createHabit(UUID userId, @NonNull CreateHabitRequest request) {
         Optional<User> maybeUser = userRepository.findById(userId);
         if (maybeUser.isEmpty()) {
-            return Result.failure("HABIT_USER_NOT_FOUND", "Usuario nao encontrado");
+            return Result.failure("HABIT_USER_NOT_FOUND", "Usuário nao encontrado");
         }
         try {
             Habit habit = Habit.create(
@@ -66,7 +75,10 @@ public class HabitService {
             return Result.failure("HABIT_INVALID_INPUT", ex.getMessage());
         }
     }
-    /** Cria ou atualiza o log diário de um hábito. */
+
+    /**
+     * Cria ou atualiza o log diário de um hábito.
+     */
     public Result<HabitLogResponseDTO> markHabitDay(UUID habitId, @NonNull MarkHabitDayRequest request) {
         Optional<Habit> maybeHabit = habitRepository.findById(habitId);
         if (maybeHabit.isEmpty()) {
@@ -91,6 +103,7 @@ public class HabitService {
             return Result.failure("HABIT_INVALID_INPUT", ex.getMessage());
         }
     }
+
     @Transactional(readOnly = true)
     /** Busca o histórico de logs de um hábito, opcionalmente filtrado por intervalo. */
     public Result<List<HabitLogResponseDTO>> getHabitLogs(UUID habitId, LocalDate fromDate, LocalDate toDate) {
@@ -112,6 +125,7 @@ public class HabitService {
         }
         return Result.success(logs.stream().map(HabitLogResponseDTO::from).toList());
     }
+
     @Transactional(readOnly = true)
     /** Calcula a streak atual do hábito informado. */
     public Result<HabitStreakResponseDTO> getHabitStreak(UUID habitId) {

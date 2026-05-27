@@ -4,11 +4,13 @@ import com.diegoramos.mylifediary.modules.journal.domain.entity.JournalEntry;
 import com.diegoramos.mylifediary.modules.journal.domain.enums.MoodTypes;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 public record JournalEntryResponseDTO(
         UUID id,
         UUID journalId,
+        LocalDate entryDate,
         String content,
         MoodTypes mood,
         Instant createdAt,
@@ -18,6 +20,7 @@ public record JournalEntryResponseDTO(
         return new JournalEntryResponseDTO(
                 entry.getId(),
                 entry.getJournal().getId(),
+                entry.getEntryDate(),
                 entry.getContent(),
                 entry.getMood(),
                 entry.getCreatedAt(),

@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -20,7 +21,7 @@ public interface JournalEntryRepository extends JpaRepository<JournalEntry, UUID
      * @param pageable  configuração de paginação
      * @return página contendo as entradas do diário
      */
-    Page<JournalEntry> findByJournalIdOrderByCreatedAtDesc(
+    Page<JournalEntry> findByJournalIdOrderByEntryDateDesc(
             UUID journalId,
             Pageable pageable
     );
@@ -42,6 +43,18 @@ public interface JournalEntryRepository extends JpaRepository<JournalEntry, UUID
     );
 
     /**
+     * Busca uma entrada específica por diário e data.
+     *
+     * @param journalId ID do diário
+     * @param entryDate data da entrada
+     * @return entrada encontrada ou vazio
+     */
+    Optional<JournalEntry> findByJournalIdAndEntryDate(
+            UUID journalId,
+            LocalDate entryDate
+    );
+
+    /**
      * Verifica se uma entrada pertence
      * a um determinado diário.
      *
@@ -55,6 +68,19 @@ public interface JournalEntryRepository extends JpaRepository<JournalEntry, UUID
     );
 
     /**
+     * Verifica se uma entrada pertence
+     * a um determinado diário e data.
+     *
+     * @param journalId ID do diário
+     * @param entryDate data da entrada
+     * @return true caso exista
+     */
+    boolean existsByJournalIdAndEntryDate(
+            UUID journalId,
+            LocalDate entryDate
+    );
+
+    /**
      * Retorna a quantidade total de entradas
      * cadastradas num diário.
      *
@@ -63,4 +89,3 @@ public interface JournalEntryRepository extends JpaRepository<JournalEntry, UUID
      */
     long countByJournalId(UUID journalId);
 }
-
