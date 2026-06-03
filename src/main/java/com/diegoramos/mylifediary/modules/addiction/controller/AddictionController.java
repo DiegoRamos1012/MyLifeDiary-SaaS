@@ -4,6 +4,7 @@ import com.diegoramos.mylifediary.common.response.ResultHttpResponseHelper;
 import com.diegoramos.mylifediary.modules.addiction.dto.request.CreateAddictionRequest;
 import com.diegoramos.mylifediary.modules.addiction.dto.request.RegisterAddictionLogRequest;
 import com.diegoramos.mylifediary.modules.addiction.service.AddictionService;
+import com.diegoramos.mylifediary.config.security.JwtService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -28,9 +29,11 @@ import java.util.UUID;
 public class AddictionController {
 
     private final AddictionService addictionService;
+    private final JwtService jwtService;
 
-    public AddictionController(AddictionService addictionService) {
+    public AddictionController(AddictionService addictionService, JwtService jwtService) {
         this.addictionService = addictionService;
+        this.jwtService = jwtService;
     }
 
     @PostMapping("/users/{userId}")
@@ -83,6 +86,24 @@ public class AddictionController {
     public ResponseEntity<?> getCurrentSobrietyStreak(@PathVariable UUID addictionId,
                                                       @PathVariable UUID userId) {
         return ResultHttpResponseHelper.respond(addictionService.getCurrentSobrietyStreak(addictionId, userId), HttpStatus.OK);
+    }
+
+    @GetMapping
+    @Operation(summary = "Lista dependências do usuário autenticado (paginação)")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso"),
+            @ApiResponse(responseCode = "401", description = "Não autenticado")
+    })
+    public ResponseEntity<?> findAllForAuthenticated(@RequestHeader(name = "Authorization", required = false) String authorization,
+                                                     @RequestParam(defaultValue = "0") int page,
+                                                     @RequestParam(defaultValue = "20") int size) {
+        if (authorization == null || !authorization.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        String token = authorization.substring("Bearer ".length());
+        String email = jwtService.extractEmail(token);
+        return ResultHttpResponseHelper.respond(addictionService.findAllByEmail(email, page, size), HttpStatus.OK);
     }
 }
 
