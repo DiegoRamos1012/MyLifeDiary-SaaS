@@ -3,7 +3,6 @@ package com.diegoramos.mylifediary.modules.journal.domain.entity;
 import com.diegoramos.mylifediary.common.base.BaseEntity;
 import com.diegoramos.mylifediary.common.exception.DomainException;
 import com.diegoramos.mylifediary.common.util.DomainValidation;
-import com.diegoramos.mylifediary.common.util.TextNormalizer;
 import com.diegoramos.mylifediary.modules.journal.domain.enums.MoodTypes;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -47,9 +46,9 @@ public class JournalEntry extends BaseEntity {
         DomainValidation.validateRequired(mood, "O humor do dia");
 
         if (content.length() > 20000) {
-            throw new DomainException("O limite máximo do diário é de 20.000 caracteres")
+            throw new DomainException("O limite máximo do diário é de 20.000 caracteres");
         }
 
-        return new JournalEntry(journal, content, mood );
+        return new JournalEntry(journal, content, mood);
     }
 }
