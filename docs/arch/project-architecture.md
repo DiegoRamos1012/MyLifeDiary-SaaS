@@ -508,7 +508,7 @@ Ela concentra:
 
 - `id`
 - `createdAt`
-- `lastTimeChanged`
+- `updatedAt`
 
 E usa callbacks JPA:
 
@@ -1199,7 +1199,7 @@ Ela concentra:
 
 - `id`
 - `createdAt`
-- `lastTimeChanged`
+- `updatedAt`
 
 E usa callbacks JPA:
 
