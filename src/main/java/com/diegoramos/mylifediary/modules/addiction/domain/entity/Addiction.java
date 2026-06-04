@@ -74,15 +74,10 @@ public class Addiction extends BaseEntity {
         return new Addiction(
                 user,
                 TextNormalizer.name(title),
-                normalizeDescription(description),
+                TextNormalizer.trimToNull(description),
                 addictionCategory,
                 startDate
         );
-    }
-
-    private static String normalizeDescription(String description) {
-        String normalized = TextNormalizer.trim(description);
-        return (normalized == null || normalized.isBlank()) ? null : normalized;
     }
 }
 

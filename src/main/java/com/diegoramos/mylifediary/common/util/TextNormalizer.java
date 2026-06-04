@@ -36,6 +36,19 @@ public final class TextNormalizer {
     }
 
     /**
+     * Remove espaços nas extremidades e converte texto vazio/em branco para null.
+     *
+     * <p>Útil para campos opcionais, mantendo um único significado para valor ausente.</p>
+     *
+     * @param value texto original
+     * @return texto normalizado ou null quando ausente/em branco
+     */
+    public static String trimToNull(String value) {
+        String normalized = trim(value);
+        return (normalized == null || normalized.isBlank()) ? null : normalized;
+    }
+
+    /**
      * Converte toda a string para letras minúsculas utilizando {@link Locale#ROOT}.
      *
      * <p>Garante comportamento consistente independente do idioma do sistema operacional.</p>
