@@ -18,7 +18,7 @@ import java.time.Instant;
  * </ul>
  *
  * <p>Falhas inesperadas continuam sob responsabilidade do {@code GlobalExceptionHandler}.
- * Como este helper nao recebe mais o request HTTP, o campo path no erro e opcional.
+ * Como este helper não recebe mais o request HTTP, o campo path no erro é opcional.
  */
 public final class ResultHttpResponseHelper {
 
@@ -30,7 +30,7 @@ public final class ResultHttpResponseHelper {
      *
      * <p>Em caso de sucesso, retorna a resposta com o status informado.
      * Em caso de falha esperada, retorna um {@link ApiErrorResponse} com o status mapeado.
-     * O campo path sera nulo, pois o helper nao depende de contexto HTTP.
+     * O campo path será nulo, pois o helper não depende de contexto HTTP.
      *
      * @param result        o resultado retornado pelo service
      * @param successStatus o status HTTP usado quando o resultado for de sucesso
@@ -64,7 +64,8 @@ public final class ResultHttpResponseHelper {
     private static HttpStatus mapErrorStatus(ResultError error) {
         return switch (error.code()) {
             case "USER_EMAIL_ALREADY_EXISTS" -> HttpStatus.CONFLICT;
-            case "USER_NOT_FOUND", "HABIT_NOT_FOUND", "HABIT_USER_NOT_FOUND" -> HttpStatus.NOT_FOUND;
+            case "USER_NOT_FOUND", "HABIT_NOT_FOUND", "HABIT_USER_NOT_FOUND",
+                 "JOURNAL_USER_NOT_FOUND", "JOURNAL_NOT_FOUND", "JOURNAL_ENTRY_NOT_FOUND" -> HttpStatus.NOT_FOUND;
             case "AUTH_INVALID_CREDENTIALS", "AUTH_ACCOUNT_NOT_ACTIVE",
                  "AUTH_REFRESH_TOKEN_NOT_FOUND", "AUTH_REFRESH_TOKEN_REVOKED", "AUTH_REFRESH_TOKEN_EXPIRED" -> HttpStatus.UNAUTHORIZED;
             default -> HttpStatus.BAD_REQUEST;
