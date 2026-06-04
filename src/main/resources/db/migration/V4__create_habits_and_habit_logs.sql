@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS habits (
     id                UUID NOT NULL PRIMARY KEY,
     created_at        TIMESTAMP WITH TIME ZONE NOT NULL,
-    last_time_changed TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at        TIMESTAMP WITH TIME ZONE NOT NULL,
     user_id           UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     title             VARCHAR(80) NOT NULL,
     description       TEXT,
@@ -14,7 +14,7 @@ CREATE INDEX IF NOT EXISTS idx_habits_user_id ON habits(user_id);
 CREATE TABLE IF NOT EXISTS habit_logs (
     id                UUID NOT NULL PRIMARY KEY,
     created_at        TIMESTAMP WITH TIME ZONE NOT NULL,
-    last_time_changed TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at        TIMESTAMP WITH TIME ZONE NOT NULL,
     habit_id          UUID NOT NULL REFERENCES habits(id) ON DELETE CASCADE,
     date              DATE NOT NULL,
     completed         BOOLEAN NOT NULL,

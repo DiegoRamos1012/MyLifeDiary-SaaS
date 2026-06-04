@@ -18,7 +18,7 @@ Permitir que um usuário registre dependências/comportamentos que deseja evitar
   - Campos: `addiction` (referência), `date` (LocalDate), `relapsed` (boolean), `note` (opcional, max 500 chars).
   - Existe uma `UniqueConstraint(addiction_id, date)` para garantir no nível do banco que só haja um log por dia por dependência.
   - `note` é normalizada localmente (trim + blank → null).
-  - `create(...)` e `mark(...)` aplicam validações de domínio e atualizam `lastTimeChanged` quando apropriado.
+  - `create(...)` e `mark(...)` aplicam validações de domínio e atualizam `updatedAt` quando apropriado.
 
 ## Contratos HTTP (Controller)
 

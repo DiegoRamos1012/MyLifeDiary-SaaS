@@ -44,7 +44,7 @@ public abstract class BaseEntity {
         updatedAt = Instant.now();
     }
 
-    protected void updateLastTimeChanged() {
+    protected void updateUpdatedAt() {
         this.updatedAt = Instant.now();
     }
 }

@@ -74,7 +74,7 @@ public class AddictionLog extends BaseEntity {
         DomainValidation.validateRequired(relapsed, "O status de recaída");
         this.relapsed = relapsed;
         this.note = normalizeNote(note);
-        updateLastTimeChanged();
+        updateUpdatedAt();
     }
 
     private static String normalizeNote(String note) {

@@ -75,7 +75,7 @@ public class HabitLog extends BaseEntity {
         DomainValidation.validateRequired(completed, "O status de conclusão");
         this.completed = completed;
         this.note = normalizeNote(note);
-        updateLastTimeChanged();
+        updateUpdatedAt();
     }
 
     /**
