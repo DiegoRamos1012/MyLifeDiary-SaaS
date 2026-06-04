@@ -1,0 +1,77 @@
+package com.diegoramos.mylifediary.common.response;
+
+import com.diegoramos.mylifediary.common.result.Result;
+import com.diegoramos.mylifediary.common.result.ResultError;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
+import java.time.Instant;
+
+/**
+ * Helper responsável por converter um {@link Result} em resposta HTTP padronizada.
+ *
+ * <p>Ele mantém os controllers enxutos ao centralizar a tradução entre:
+ *
+ * <ul>
+ *   <li>sucesso de domínio -> resposta HTTP de sucesso;</li>
+ *   <li>falha esperada -> {@link ApiErrorResponse} com status apropriado.</li>
+ * </ul>
+ *
+ * <p>Falhas inesperadas continuam sob responsabilidade do {@code GlobalExceptionHandler}.
+ * Como este helper não recebe mais o request HTTP, o campo path no erro é opcional.
+ */
+public final class ResultHttpResponseHelper {
+
+    private ResultHttpResponseHelper() {
+    }
+
+    /**
+     * Converte um {@link Result} em {@link ResponseEntity}.
+     *
+     * <p>Em caso de sucesso, retorna a resposta com o status informado.
+     * Em caso de falha esperada, retorna um {@link ApiErrorResponse} com o status mapeado.
+     * O campo path será nulo, pois o helper não depende de contexto HTTP.
+     *
+     * @param result        o resultado retornado pelo service
+     * @param successStatus o status HTTP usado quando o resultado for de sucesso
+     * @param <T>           tipo do valor de sucesso carregado pelo {@link Result}
+     * @return uma resposta HTTP pronta para uso no controller
+     */
+    public static <T> ResponseEntity<?> respond(Result<T> result,
+                                                HttpStatus successStatus) {
+        return result.fold(
+                value -> ResponseEntity.status(successStatus).body(value),
+                error -> {
+                    HttpStatus errorStatus = mapErrorStatus(error);
+                    return ResponseEntity.status(errorStatus).body(new ApiErrorResponse(
+                            Instant.now(),
+                            errorStatus.value(),
+                            errorStatus.getReasonPhrase(),
+                            error.message(),
+                            null,
+                            error.details()
+                    ));
+                }
+        );
+    }
+
+    /**
+     * Mapeia um código de erro esperado para o status HTTP correspondente.
+     *
+     * @param error erro de domínio retornado pelo service
+     * @return status HTTP apropriado para a falha informada
+     */
+    private static HttpStatus mapErrorStatus(ResultError error) {
+        return switch (error.code()) {
+            case "USER_EMAIL_ALREADY_EXISTS" -> HttpStatus.CONFLICT;
+            case "USER_NOT_FOUND", "HABIT_NOT_FOUND", "HABIT_USER_NOT_FOUND",
+                 "JOURNAL_USER_NOT_FOUND", "JOURNAL_NOT_FOUND", "JOURNAL_ENTRY_NOT_FOUND" -> HttpStatus.NOT_FOUND;
+            case "AUTH_INVALID_CREDENTIALS", "AUTH_ACCOUNT_NOT_ACTIVE",
+                 "AUTH_REFRESH_TOKEN_NOT_FOUND", "AUTH_REFRESH_TOKEN_REVOKED", "AUTH_REFRESH_TOKEN_EXPIRED" -> HttpStatus.UNAUTHORIZED;
+            default -> HttpStatus.BAD_REQUEST;
+        };
+    }
+}
+
+
+
