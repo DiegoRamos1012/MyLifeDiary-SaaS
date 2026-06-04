@@ -1,19 +1,11 @@
 package com.diegoramos.mylifediary.modules.addiction.domain.entity;
 
 import com.diegoramos.mylifediary.common.base.BaseEntity;
-import com.diegoramos.mylifediary.common.exception.DomainException;
 import com.diegoramos.mylifediary.common.util.DomainValidation;
 import com.diegoramos.mylifediary.common.util.TextNormalizer;
 import com.diegoramos.mylifediary.modules.addiction.domain.enums.AddictionCategory;
 import com.diegoramos.mylifediary.modules.user.domain.entity.User;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -59,7 +51,7 @@ public class Addiction extends BaseEntity {
     }
 
     /**
-     * Cria uma nova dependência/objetivo de superação com validações de domínio.
+     * Cria uma dependência/objetivo de superação com validações de domínio.
      */
     public static Addiction create(User user,
                                    String title,
