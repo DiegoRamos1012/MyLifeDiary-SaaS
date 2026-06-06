@@ -1,0 +1,16 @@
+{
+  "name": "mylifediary-k6",
+  "version": "1.0.0",
+  "private": true,
+  "description": "k6 scripts for MyLifeDiary load and integration tests",
+  "scripts": {
+    "test": "echo \"Run k6 scripts from the k6/ folder\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DiegoRamos1012/MyLifeDiary-SaaS.git"
+  },
+  "dependencies": {
+    "k6": "^0.0.0"
+  }
+}
