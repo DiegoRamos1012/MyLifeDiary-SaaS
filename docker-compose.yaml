@@ -3,16 +3,18 @@ services:
     image: postgres:17-alpine
     container_name: mylifediary-db
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
-      POSTGRES_DB: mylifediary
-      POSTGRES_USER: mylifediary
-      POSTGRES_PASSWORD: mylifediary
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U mylifediary -d mylifediary"]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -24,16 +26,21 @@ services:
     image: mylifediary:local
     container_name: mylifediary-app
     restart: unless-stopped
+    env_file:
+      - .env
     depends_on:
       db:
         condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/mylifediary
-      SPRING_DATASOURCE_USERNAME: mylifediary
-      SPRING_DATASOURCE_PASSWORD: mylifediary
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${DB_NAME}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      SPRING_FLYWAY_ENABLED: true
+      SPRING_FLYWAY_URL: jdbc:postgresql://db:5432/${DB_NAME}
+      SPRING_FLYWAY_USER: ${DB_USER}
+      SPRING_FLYWAY_PASSWORD: ${DB_PASSWORD}
     ports:
       - "8080:8080"
 
 volumes:
   pgdata:
-

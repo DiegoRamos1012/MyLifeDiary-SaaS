@@ -162,7 +162,7 @@ public class User extends BaseEntity {
             throw new DomainException("Erro: E-mail inválido");
         }
         this.email = TextNormalizer.email(newEmail);
-        updateLastTimeChanged();
+        updateUpdatedAt();
     }
 
     /**
@@ -177,7 +177,7 @@ public class User extends BaseEntity {
             throw new DomainException("Erro: senha inválida");
         }
         this.passwordHash = newPasswordHash;
-        updateLastTimeChanged();
+        updateUpdatedAt();
     }
 
     /**
