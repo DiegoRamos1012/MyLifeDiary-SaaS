@@ -30,6 +30,9 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+### JS Scripts ###
+/node_modules
+
 ### VS Code ###
 .vscode/
 

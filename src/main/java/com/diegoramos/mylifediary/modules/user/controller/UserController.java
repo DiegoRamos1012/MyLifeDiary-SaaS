@@ -12,8 +12,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -37,7 +37,10 @@ public class UserController {
     }
 
     @GetMapping
-    @Operation(summary = "Lista todos os usuários com paginação e filtro opcional por nome")
+    @Operation(
+            summary = "Lista todos os usuários com paginação e filtro opcional por nome",
+            description = "Acesso restrito a administradores (ADMIN)"
+    )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Usuários listados com sucesso")
     })
@@ -124,7 +127,7 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "Nenhum usuário encontrado")
     })
     public ResponseEntity<Page<UserResponseDTO>> findUsersByStatus(
-            @Parameter(description = "Lista de status para filtrar usuários. Ex.: ACTIVE, SUSPENDED")
+            @Parameter(description = "Lista de status para filtrar usuários (ACESSO RESTRITO A ADMIN). Ex.: ACTIVE, SUSPENDED")
             @RequestParam List<UserStatus> statusList,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
