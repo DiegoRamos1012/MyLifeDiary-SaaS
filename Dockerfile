@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1.7
-
 FROM eclipse-temurin:25-jdk AS build
 WORKDIR /app
 
@@ -12,15 +10,13 @@ RUN --mount=type=cache,target=/root/.m2 ./mvnw -q -DskipTests dependency:go-offl
 COPY src/ src/
 RUN --mount=type=cache,target=/root/.m2 ./mvnw -q -DskipTests package -Dspring-boot.repackage.excludeDevtools=true
 
-# ---- runtime ----
-FROM eclipse-temurin:25-jre AS runtime
+FROM eclipse-temurin:25-jre-alpine AS runtime
 WORKDIR /app
 
-# Extrai o JAR em camadas para melhor cache no Docker
 COPY --from=build /app/target/*.jar app.jar
 RUN java -Djarmode=tools -jar app.jar extract --layers --launcher --destination extracted
 
-FROM eclipse-temurin:25-jre AS final
+FROM eclipse-temurin:25-jre-alpine AS final
 WORKDIR /app
 
 COPY --from=runtime /app/extracted/dependencies/ ./
