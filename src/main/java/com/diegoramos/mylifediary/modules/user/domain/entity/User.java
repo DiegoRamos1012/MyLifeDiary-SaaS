@@ -53,6 +53,15 @@ public class User extends BaseEntity {
     @Column(name = "role", nullable = false)
     private UserRole role;
 
+    @Column(name = "email_verified", nullable = false)
+    private boolean emailVerified;
+
+    @Column(name = "verification_token")
+    private String verificationToken;
+
+    @Column(name = "verification_token_expires_at")
+    private Instant verificationTokenExpiresAt;
+
     @Column(name = "deletion_requested_at")
     private Instant deletionRequestedAt;
 
@@ -62,31 +71,30 @@ public class User extends BaseEntity {
     */
 
     /**
-     * Construtor interno usado pela fábrica {@link #create(String, String, String, LocalDate)}.
+     * Construtor interno usado pela fábrica {@link (String, String, String, LocalDate, UserStatus, UserRole, boolean)}.
      *
-     * @param fullName     nome completo do usuário
-     * @param email        e-mail normalizado
-     * @param passwordHash hash da senha
-     * @param birthDate    data de nascimento (opcional)
-     * @param status       status inicial do usuário
+     * @param fullName      nome completo do usuário
+     * @param email         e-mail normalizado
+     * @param passwordHash  hash da senha
+     * @param birthDate     data de nascimento (opcional)
+     * @param status        status inicial do usuário
+     * @param role          role atual do usuário
+     * @param emailVerified status da verificação do email
      */
     private User(String email,
                  String passwordHash,
                  String fullName,
                  LocalDate birthDate,
                  UserStatus status,
-                 UserRole role) {
+                 UserRole role,
+                 boolean emailVerified) {
         this.email = email;
         this.passwordHash = passwordHash;
         this.fullName = fullName;
         this.birthDate = birthDate;
         this.status = status;
         this.role = role;
-    }
-
-    @JsonIgnore
-    public String getPasswordHash() {
-        return passwordHash;
+        this.emailVerified = emailVerified;
     }
 
     /**
@@ -102,11 +110,13 @@ public class User extends BaseEntity {
      * @param birthDate    data de nascimento (opcional)
      * @return instância de {@link User} preparada com status {@code ACTIVE}
      * @throws DomainException quando algum campo obrigatório estiver ausente ou inválido
+     * @
      */
     public static User create(String email,
                               String passwordHash,
                               String fullName,
-                              LocalDate birthDate) {
+                              LocalDate birthDate
+    ) {
 
         DomainValidation.validateRequired(email, "E-mail");
         DomainValidation.validateRequired(passwordHash, "Senha");
@@ -118,8 +128,14 @@ public class User extends BaseEntity {
                 TextNormalizer.name(fullName),
                 birthDate,
                 UserStatus.ACTIVE,
-                UserRole.USER
+                UserRole.USER,
+                false
         );
+    }
+
+    @JsonIgnore
+    public String getPasswordHash() {
+        return passwordHash;
     }
 
     /**
@@ -199,5 +215,16 @@ public class User extends BaseEntity {
 
         this.fullName = TextNormalizer.name(fullName);
         this.birthDate = birthDate;
+    }
+
+    public void assignVerificationToken(String token, Instant expiredAt) {
+        this.verificationToken = token;
+        this.verificationTokenExpiresAt = expiredAt;
+    }
+
+    public void confirmEmailVerification() {
+        this.emailVerified = true;
+        this.verificationToken = null;
+        this.verificationTokenExpiresAt = null;
     }
 }
