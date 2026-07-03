@@ -4,6 +4,8 @@ import com.diegoramos.mylifediary.common.exception.DomainException;
 import com.resend.Resend;
 import com.resend.core.exception.ResendException;
 import com.resend.services.emails.model.CreateEmailOptions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
@@ -11,6 +13,7 @@ import org.thymeleaf.context.Context;
 @Component
 public class ResendEmailService implements EmailService {
 
+    private static final Logger log = LoggerFactory.getLogger(ResendEmailService.class);
     private final ResendProperties properties;
     private final TemplateEngine templateEngine;
 
@@ -39,6 +42,7 @@ public class ResendEmailService implements EmailService {
         try {
             resend.emails().send(params);
         } catch (ResendException e) {
+            log.error("Erro ao enviar e-mail de verificação: {}", e.getMessage(), e);
             throw new DomainException("Erro ao enviar e-mail de verificação");
         }
     }

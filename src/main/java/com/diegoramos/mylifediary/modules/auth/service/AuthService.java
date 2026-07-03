@@ -1,8 +1,8 @@
 package com.diegoramos.mylifediary.modules.auth.service;
 
 import com.diegoramos.mylifediary.common.result.Result;
-import com.diegoramos.mylifediary.config.security.JwtProperties;
-import com.diegoramos.mylifediary.config.security.JwtService;
+import com.diegoramos.mylifediary.config.jwt.JwtProperties;
+import com.diegoramos.mylifediary.config.jwt.JwtService;
 import com.diegoramos.mylifediary.modules.auth.domain.entity.RefreshToken;
 import com.diegoramos.mylifediary.modules.auth.dto.request.LoginRequest;
 import com.diegoramos.mylifediary.modules.auth.dto.request.RefreshRequest;

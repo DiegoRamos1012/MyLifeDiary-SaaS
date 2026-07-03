@@ -68,7 +68,7 @@ public class UserController {
             @ApiResponse(responseCode = "400", description = "Falha esperada ao verificar usuário")
     })
     public ResponseEntity<?> verifyEmail(@RequestParam String token) {
-        return ResponseEntity.ok(userService.verifyEmail(token));
+        return ResultHttpResponseHelper.respond(userService.verifyEmail(token), HttpStatus.OK);
     }
 
     @PatchMapping("/{userId}/userInfo")

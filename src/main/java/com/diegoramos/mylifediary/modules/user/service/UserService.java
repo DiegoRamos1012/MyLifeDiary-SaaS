@@ -121,7 +121,7 @@ public class UserService {
 
             User saved = userRepository.save(user);
 
-            String verificationUrl = appProperties.baseUrl() + "/verify-email?token=" + token;
+            String verificationUrl = appProperties.baseUrl() + "/users/verify-email?token=" + token;
             emailService.sendVerificationEmail(saved.getEmail(), saved.getFullName(), verificationUrl);
             return Result.success(UserResponseDTO.from(saved));
         } catch (DomainException ex) {

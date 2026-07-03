@@ -1,4 +1,4 @@
-package com.diegoramos.mylifediary.config.security;
+package com.diegoramos.mylifediary.config.jwt;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -15,18 +15,6 @@ public class JwtProperties {
     @Value("${jwt.refresh-token.expiration-days:7}")
     private long refreshTokenExpirationDays;
 
-    public String getSecret() {
-        return secret;
-    }
-
-    public long getExpirationSeconds() {
-        return expirationSeconds;
-    }
-
-    public long getRefreshTokenExpirationDays() {
-        return refreshTokenExpirationDays;
-    }
-
     // Public constructor to ease testing and manual instantiation
     public JwtProperties(String secret, long expirationSeconds) {
         this(secret, expirationSeconds, 7L);
@@ -39,6 +27,18 @@ public class JwtProperties {
     }
 
     public JwtProperties() {
+    }
+
+    public String getSecret() {
+        return secret;
+    }
+
+    public long getExpirationSeconds() {
+        return expirationSeconds;
+    }
+
+    public long getRefreshTokenExpirationDays() {
+        return refreshTokenExpirationDays;
     }
 }
 

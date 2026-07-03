@@ -1,47 +1,36 @@
 package com.diegoramos.mylifediary.modules.auth.service;
 
 import com.diegoramos.mylifediary.common.result.Result;
-import com.diegoramos.mylifediary.config.security.JwtProperties;
-import com.diegoramos.mylifediary.config.security.JwtService;
+import com.diegoramos.mylifediary.config.jwt.JwtProperties;
+import com.diegoramos.mylifediary.config.jwt.JwtService;
+import com.diegoramos.mylifediary.modules.auth.domain.entity.RefreshToken;
 import com.diegoramos.mylifediary.modules.auth.dto.request.LoginRequest;
 import com.diegoramos.mylifediary.modules.auth.dto.request.RefreshRequest;
-import com.diegoramos.mylifediary.modules.auth.domain.entity.RefreshToken;
 import com.diegoramos.mylifediary.modules.auth.dto.response.AuthResponse;
 import com.diegoramos.mylifediary.modules.auth.repository.RefreshTokenRepository;
 import com.diegoramos.mylifediary.modules.user.domain.entity.User;
 import com.diegoramos.mylifediary.modules.user.domain.enums.UserRole;
 import com.diegoramos.mylifediary.modules.user.domain.enums.UserStatus;
 import com.diegoramos.mylifediary.modules.user.repository.UserRepository;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Captor;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.lang.reflect.Field;
 import java.time.Clock;
 import java.time.Instant;
-import java.time.ZoneOffset;
 import java.time.LocalDate;
-import java.util.UUID;
 import java.util.Optional;
+import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.any;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
@@ -72,12 +61,6 @@ class AuthServiceTest {
 
     @InjectMocks
     private AuthService authService;
-
-    @BeforeEach
-    void setupClock() {
-        lenient().when(clock.instant()).thenReturn(NOW);
-        lenient().when(jwtProperties.getRefreshTokenExpirationDays()).thenReturn(7L);
-    }
 
     private static void setId(User user, UUID id) throws Exception {
         Field field = User.class.getSuperclass().getDeclaredField("id");
@@ -110,6 +93,12 @@ class AuthServiceTest {
             token.revoke();
         }
         return token;
+    }
+
+    @BeforeEach
+    void setupClock() {
+        lenient().when(clock.instant()).thenReturn(NOW);
+        lenient().when(jwtProperties.getRefreshTokenExpirationDays()).thenReturn(7L);
     }
 
     @Test
