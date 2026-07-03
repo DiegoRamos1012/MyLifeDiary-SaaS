@@ -4,6 +4,7 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 .env
+results.json
 
 ### STS ###
 .apt_generated

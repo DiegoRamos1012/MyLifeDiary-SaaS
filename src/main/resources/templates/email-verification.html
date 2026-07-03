@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<h1>Bem-vindo ao Solenia, <span th:text="${name}">Usuário</span>!</h1>
+<p>Clique no botão abaixo para verificar seu e-mail:</p>
+<a th:href="${verificationUrl}">Verificar e-mail</a>
+<p>Este link expira em 24 horas.</p>
+</body>
+</html>

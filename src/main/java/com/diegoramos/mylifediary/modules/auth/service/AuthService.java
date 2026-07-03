@@ -2,15 +2,15 @@ package com.diegoramos.mylifediary.modules.auth.service;
 
 import com.diegoramos.mylifediary.common.result.Result;
 import com.diegoramos.mylifediary.config.security.JwtProperties;
+import com.diegoramos.mylifediary.config.security.JwtService;
+import com.diegoramos.mylifediary.modules.auth.domain.entity.RefreshToken;
 import com.diegoramos.mylifediary.modules.auth.dto.request.LoginRequest;
 import com.diegoramos.mylifediary.modules.auth.dto.request.RefreshRequest;
 import com.diegoramos.mylifediary.modules.auth.dto.response.AuthResponse;
-import com.diegoramos.mylifediary.modules.auth.domain.entity.RefreshToken;
 import com.diegoramos.mylifediary.modules.auth.repository.RefreshTokenRepository;
 import com.diegoramos.mylifediary.modules.user.domain.entity.User;
 import com.diegoramos.mylifediary.modules.user.domain.enums.UserStatus;
 import com.diegoramos.mylifediary.modules.user.repository.UserRepository;
-import com.diegoramos.mylifediary.config.security.JwtService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -60,6 +60,10 @@ public class AuthService {
 
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             return Result.failure("AUTH_INVALID_CREDENTIALS", genericError);
+        }
+
+        if (!user.isEmailVerified()) {
+            return Result.failure("AUTH_EMAIL_NOT_VERIFIED", "E-mail não verificado. Verifique sua caixa de entrada");
         }
 
         if (user.getStatus() != UserStatus.ACTIVE) {

@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -26,10 +27,18 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     /**
      * Verifica se já existe usuário com o e-mail informado, ignorando caixa alta/baixa.
      *
-     * @param email e-mail a ser verificado
+     * @param email e-mail a ser buscado
      * @return {@code true} quando já existe usuário com o e-mail informado
      */
     boolean existsByEmailIgnoreCase(String email);
+
+    /**
+     * Busca o usuário pelo token
+     *
+     * @param token token a ser buscado
+     * @return {@code true} quando encontra o usuário com este token
+     */
+    Optional<User> findByVerificationToken(String token);
 
     java.util.Optional<User> findByEmailIgnoreCase(String email);
 

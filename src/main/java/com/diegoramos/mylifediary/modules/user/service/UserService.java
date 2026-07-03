@@ -1,5 +1,7 @@
 package com.diegoramos.mylifediary.modules.user.service;
 
+import com.diegoramos.mylifediary.common.base.AppProperties;
+import com.diegoramos.mylifediary.common.email.EmailService;
 import com.diegoramos.mylifediary.common.exception.DomainException;
 import com.diegoramos.mylifediary.common.result.Result;
 import com.diegoramos.mylifediary.common.util.TextNormalizer;
@@ -24,8 +26,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -35,12 +40,17 @@ public class UserService {
     private static final Logger log = LoggerFactory.getLogger(UserService.class);
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
     private final Clock clock;
+    private final AppProperties appProperties;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, Clock clock) {
+
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, EmailService emailService, Clock clock, AppProperties appProperties) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
         this.clock = clock;
+        this.appProperties = appProperties;
     }
 
     /**
@@ -104,7 +114,15 @@ public class UserService {
         try {
             String passwordHash = passwordEncoder.encode(dto.password());
             User user = User.create(dto.email(), passwordHash, dto.fullName(), dto.birthDate());
+
+            String token = UUID.randomUUID().toString();
+            Instant expiresAt = Instant.now(clock).plus(Duration.ofHours(24));
+            user.assignVerificationToken(token, expiresAt);
+
             User saved = userRepository.save(user);
+
+            String verificationUrl = appProperties.baseUrl() + "/verify-email?token=" + token;
+            emailService.sendVerificationEmail(saved.getEmail(), saved.getFullName(), verificationUrl);
             return Result.success(UserResponseDTO.from(saved));
         } catch (DomainException ex) {
             log.info("register: domain validation failed: {}", ex.getMessage());
@@ -113,6 +131,31 @@ public class UserService {
             log.warn("register: data integrity violation (possible race)");
             return Result.failure("USER_EMAIL_ALREADY_EXISTS", "E-mail já cadastrado");
         }
+    }
+
+    public Result<Void> verifyEmail(String token) {
+
+
+        Optional<User> maybeUser = userRepository.findByVerificationToken(token);
+
+        if (maybeUser.isEmpty()) {
+            return Result.failure("USER_INVALID_TOKEN", "Token inválido");
+        }
+
+        /*
+        Extrai o valor dentro da variável Optional, como existe,
+        a extração funciona e evita o erro "NoSuchElementException"
+        */
+        User user = maybeUser.get();
+
+        if (Instant.now(clock).isAfter(user.getVerificationTokenExpiresAt())) {
+            return Result.failure("USER_TOKEN_EXPIRED", "Token expirado");
+        }
+
+        user.confirmEmailVerification();
+        userRepository.save(user);
+
+        return Result.success(null);
     }
 
     /**
