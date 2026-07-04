@@ -25,7 +25,8 @@ public class ResendEmailService implements EmailService {
     @Override
     public void sendVerificationEmail(String toEmail, String userName, String verificationUrl) {
         Context context = new Context();
-        context.setVariable("userName", userName);
+        String firstName = userName.split(" ")[0];
+        context.setVariable("userName", firstName);
         context.setVariable("verificationUrl", verificationUrl);
 
         String htmlBody = templateEngine.process("email-verification", context);
