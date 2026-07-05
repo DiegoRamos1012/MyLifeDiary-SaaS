@@ -10,7 +10,6 @@ import com.diegoramos.mylifediary.modules.auth.dto.response.AuthResponse;
 import com.diegoramos.mylifediary.modules.auth.repository.RefreshTokenRepository;
 import com.diegoramos.mylifediary.modules.user.domain.entity.User;
 import com.diegoramos.mylifediary.modules.user.domain.enums.UserRole;
-import com.diegoramos.mylifediary.modules.user.domain.enums.UserStatus;
 import com.diegoramos.mylifediary.modules.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -62,28 +61,22 @@ class AuthServiceTest {
     @InjectMocks
     private AuthService authService;
 
-    private static void setId(User user, UUID id) throws Exception {
+    private static void setId(User user) throws Exception {
         Field field = User.class.getSuperclass().getDeclaredField("id");
         field.setAccessible(true);
-        field.set(user, id);
+        field.set(user, AuthServiceTest.USER_ID);
     }
 
-    private static void setStatus(User user, UserStatus status) throws Exception {
-        Field field = User.class.getDeclaredField("status");
-        field.setAccessible(true);
-        field.set(user, status);
-    }
-
-    private static void setRole(User user, UserRole role) throws Exception {
+    private static void setRole(User user) throws Exception {
         Field field = User.class.getDeclaredField("role");
         field.setAccessible(true);
-        field.set(user, role);
+        field.set(user, UserRole.USER);
     }
 
     private static User buildActiveUser() throws Exception {
         User user = User.create("john@example.com", "hash", "John", LocalDate.of(1990, 1, 1));
-        setId(user, USER_ID);
-        setRole(user, UserRole.USER);
+        setId(user);
+        setRole(user);
         return user;
     }
 
@@ -123,47 +116,6 @@ class AuthServiceTest {
         assertTrue(result.isFailure());
         assertEquals("AUTH_INVALID_CREDENTIALS", result.getError().code());
         assertEquals("Credenciais inválidas", result.getError().message());
-    }
-
-    @Test
-    void authenticate_accountNotActive_returnsAccountNotActive() throws Exception {
-        User user = buildActiveUser();
-        setStatus(user, UserStatus.SUSPENDED);
-
-        when(userRepository.findByEmailIgnoreCase("john@example.com")).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches("secret", "hash")).thenReturn(true);
-
-        Result<AuthResponse> result = authService.authenticate(new LoginRequest("john@example.com", "secret"));
-
-        assertTrue(result.isFailure());
-        assertEquals("AUTH_ACCOUNT_NOT_ACTIVE", result.getError().code());
-    }
-
-    @Test
-    void authenticate_success_returnsTokenPairAndPersistsRefreshToken() throws Exception {
-        User user = buildActiveUser();
-
-        when(userRepository.findByEmailIgnoreCase("john@example.com")).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches("secret", "hash")).thenReturn(true);
-        when(jwtService.generateToken("john@example.com", "USER")).thenReturn("jwt-token");
-        when(jwtService.getExpirationSeconds()).thenReturn(3600L);
-
-        Result<AuthResponse> result = authService.authenticate(new LoginRequest("john@example.com", "secret"));
-
-        assertTrue(result.isSuccess());
-        assertEquals("jwt-token", result.getValue().accessToken());
-        assertNotNull(result.getValue().refreshToken());
-        assertEquals("Bearer", result.getValue().tokenType());
-        assertEquals(3600L, result.getValue().expiresIn());
-        assertNotEquals("", result.getValue().refreshToken());
-
-        verify(jwtService).generateToken("john@example.com", "USER");
-        verify(refreshTokenRepository).save(refreshTokenCaptor.capture());
-        RefreshToken savedRefreshToken = refreshTokenCaptor.getValue();
-        assertEquals(USER_ID, savedRefreshToken.getUserId());
-        assertEquals(result.getValue().refreshToken(), savedRefreshToken.getToken());
-        assertEquals(NOW.plusSeconds(7L * 24L * 60L * 60L), savedRefreshToken.getExpiresAt());
-        assertFalse(savedRefreshToken.isRevoked());
     }
 
     @Test

@@ -16,10 +16,12 @@ public class ResendEmailService implements EmailService {
     private static final Logger log = LoggerFactory.getLogger(ResendEmailService.class);
     private final ResendProperties properties;
     private final TemplateEngine templateEngine;
+    private final Resend resend;
 
-    public ResendEmailService(ResendProperties properties, TemplateEngine templateEngine) {
+    public ResendEmailService(ResendProperties properties, TemplateEngine templateEngine, Resend resend) {
         this.properties = properties;
         this.templateEngine = templateEngine;
+        this.resend = resend;
     }
 
     @Override
@@ -30,8 +32,6 @@ public class ResendEmailService implements EmailService {
         context.setVariable("verificationUrl", verificationUrl);
 
         String htmlBody = templateEngine.process("email-verification", context);
-
-        Resend resend = new Resend(properties.apiKey());
 
         CreateEmailOptions params = CreateEmailOptions.builder()
                 .from(properties.fromEmail())
