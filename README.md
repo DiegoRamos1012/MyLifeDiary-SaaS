@@ -388,19 +388,6 @@ k6/                # Scripts de carga (cadastro e fluxo autenticado)
 docs/              # Documentação interna de arquitetura, fluxos e decisões
 ```
 
----
-
-## Próximos passos
-
-- Fechar o controle de autorização por proprietário de recurso (não apenas autenticação), evitando acesso por `userId`
-  de terceiros em endpoints de módulo.
-- Consolidar e versionar ADRs formais para decisões de segurança e modelagem (refresh rotation, lifecycle e políticas de
-  log).
-- Expandir cobertura de integração para fluxos completos multi-módulo (ex.: cadastro → verificação → login → uso
-  protegido) até consolidar a meta de 80% com relatório contínuo.
-
----
-
 ## Contato
 
 **Diego Ramos dos Santos** |
