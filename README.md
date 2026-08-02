@@ -1,9 +1,9 @@
 # MyLifeDiary
 
-![Java](https://img.shields.io/badge/Java-25-orange)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.5-brightgreen)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-database-blue)
-![Docker](https://img.shields.io/badge/Docker-ready-2496ED)
+![Java](https://img.shields.io/badge/Java_25-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot_4.0.5-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 
 > "Um espaço digital para cuidar da sua mente, construir hábitos saudáveis e evoluir um dia de cada vez."
 
@@ -34,7 +34,6 @@ plataforma o seu espaço pessoal.
 - [Testes automatizados](#testes-automatizados)
 - [Como rodar o projeto](#como-rodar-o-projeto)
 - [Estrutura de pastas](#estrutura-de-pastas)
-- [Próximos passos](#próximos-passos)
 
 ---
 
@@ -369,12 +368,12 @@ docker compose down
 
 ```text
 src/main/java/com/diegoramos/mylifediary
-├── common/       # Base compartilhada (Result, erros, helpers, utilitários)
-├── config/       # Segurança JWT, Swagger/OpenAPI, configuração de tempo
+├── common/            # Base compartilhada (Result, erros, helpers, utilitários)
+├── config/            # Segurança JWT, Swagger/OpenAPI, configuração de tempo
 └── modules/
-    ├── auth/         # Login, refresh, logout e persistência de refresh token
-    ├── user/         # Cadastro, perfil, verificação de e-mail e lifecycle da conta
-    ├── habit/        # Definição de hábitos, logs diários e streak
+    ├── auth/          # Login, refresh, logout e persistência de refresh token
+    ├── user/          # Cadastro, perfil, verificação de e-mail e lifecycle da conta
+    ├── habit/         # Definição de hábitos, logs diários e streak
     ├── journal/       # Diário, bloqueio por senha e entradas por data
     └── addiction/     # Dependências, recaídas e streak de sobriedade
 
@@ -387,6 +386,8 @@ k6/                # Scripts de carga (cadastro e fluxo autenticado)
 
 docs/              # Documentação interna de arquitetura, fluxos e decisões
 ```
+
+---
 
 ## Contato
 
