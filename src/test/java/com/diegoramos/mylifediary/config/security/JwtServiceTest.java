@@ -1,5 +1,7 @@
 package com.diegoramos.mylifediary.config.security;
 
+import com.diegoramos.mylifediary.config.jwt.JwtProperties;
+import com.diegoramos.mylifediary.config.jwt.JwtService;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;

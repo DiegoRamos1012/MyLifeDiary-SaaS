@@ -1,10 +1,10 @@
 package com.diegoramos.mylifediary.modules.addiction.controller;
 
 import com.diegoramos.mylifediary.common.response.ResultHttpResponseHelper;
+import com.diegoramos.mylifediary.config.jwt.JwtService;
 import com.diegoramos.mylifediary.modules.addiction.dto.request.CreateAddictionRequest;
 import com.diegoramos.mylifediary.modules.addiction.dto.request.RegisterAddictionLogRequest;
 import com.diegoramos.mylifediary.modules.addiction.service.AddictionService;
-import com.diegoramos.mylifediary.config.security.JwtService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;

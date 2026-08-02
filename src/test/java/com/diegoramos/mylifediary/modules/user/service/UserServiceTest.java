@@ -1,5 +1,7 @@
 package com.diegoramos.mylifediary.modules.user.service;
 
+import com.diegoramos.mylifediary.common.base.AppProperties;
+import com.diegoramos.mylifediary.common.email.EmailService;
 import com.diegoramos.mylifediary.common.result.Result;
 import com.diegoramos.mylifediary.modules.user.domain.entity.User;
 import com.diegoramos.mylifediary.modules.user.domain.enums.UserStatus;
@@ -51,6 +53,11 @@ class UserServiceTest {
     private Clock clock;
     @InjectMocks
     private UserService userService;
+    @Mock
+    private EmailService emailService;
+
+    @Mock
+    private AppProperties appProperties;
     @Captor
     private ArgumentCaptor<User> userCaptor;
 
@@ -66,9 +73,10 @@ class UserServiceTest {
     }
 
     @BeforeEach
-    void setupClock() {
+    void setup() {
         when(clock.instant()).thenReturn(now);
         when(clock.getZone()).thenReturn(java.time.ZoneOffset.UTC);
+        when(appProperties.baseUrl()).thenReturn("http://localhost:8080");
     }
 
     @Test
@@ -135,7 +143,8 @@ class UserServiceTest {
         assertTrue(result.isSuccess());
         assertEquals("c@d.com", result.getValue().email());
         verify(userRepository).save(userCaptor.capture());
-        assertEquals("hash-1", /* saved password hash */ readPasswordHash(userCaptor.getValue()));
+        assertEquals("hash-1", readPasswordHash(userCaptor.getValue()));
+        verify(emailService).sendVerificationEmail(eq("c@d.com"), anyString(), anyString());
     }
 
     @Test

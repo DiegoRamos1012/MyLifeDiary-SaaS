@@ -1,6 +1,7 @@
 package com.diegoramos.mylifediary.config.security;
 
 import com.diegoramos.mylifediary.common.response.ApiErrorResponse;
+import com.diegoramos.mylifediary.config.jwt.JwtProperties;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
@@ -19,16 +20,36 @@ import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import tools.jackson.databind.ObjectMapper;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
-import tools.jackson.databind.ObjectMapper;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    private static void writeSecurityError(HttpServletResponse response,
+                                           ObjectMapper objectMapper,
+                                           int status,
+                                           String error,
+                                           String message,
+                                           String path) throws java.io.IOException {
+        ApiErrorResponse body = new ApiErrorResponse(
+                Instant.now(),
+                status,
+                error,
+                message,
+                path,
+                List.of()
+        );
+
+        response.setStatus(status);
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        objectMapper.writeValue(response.getOutputStream(), body);
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
@@ -45,6 +66,7 @@ public class SecurityConfig {
                         // Public endpoints
                         .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/users/register").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/users/verify-email").permitAll()
                         // Admin-only
                         .requestMatchers(HttpMethod.GET, "/users").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/users/*/reactivate").hasRole("ADMIN")
@@ -96,25 +118,5 @@ public class SecurityConfig {
         byte[] secret = properties.getSecret() == null ? new byte[0] : properties.getSecret().getBytes(StandardCharsets.UTF_8);
         SecretKeySpec key = new SecretKeySpec(secret, "HmacSHA256");
         return new NimbusJwtEncoder(new ImmutableSecret<>(key));
-    }
-
-    private static void writeSecurityError(HttpServletResponse response,
-                                           ObjectMapper objectMapper,
-                                           int status,
-                                           String error,
-                                           String message,
-                                           String path) throws java.io.IOException {
-        ApiErrorResponse body = new ApiErrorResponse(
-                Instant.now(),
-                status,
-                error,
-                message,
-                path,
-                List.of()
-        );
-
-        response.setStatus(status);
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        objectMapper.writeValue(response.getOutputStream(), body);
     }
 }

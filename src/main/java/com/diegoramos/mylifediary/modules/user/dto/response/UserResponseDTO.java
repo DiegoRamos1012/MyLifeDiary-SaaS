@@ -13,6 +13,7 @@ public record UserResponseDTO(
         LocalDate birthDate,
         String status,
         String role,
+        boolean emailVerified,
         Instant createdAt
 ) {
     public static UserResponseDTO from(User user) {
@@ -23,6 +24,7 @@ public record UserResponseDTO(
                 user.getBirthDate(),
                 user.getStatus().name(),
                 user.getRole() == null ? null : user.getRole().name(),
+                user.isEmailVerified(),
                 user.getCreatedAt()
         );
     }

@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Size;
 
 public record UpdatePasswordRequest(
         @NotBlank(message = "A senha a ser atualizada não pode estar vazia")
-        @Size(min = 8, max = 8)
+        @Size(min = 8, max = 128)
         String newPassword
 ) {
 }

@@ -61,6 +61,16 @@ public class UserController {
         return ResultHttpResponseHelper.respond(userService.register(dto), HttpStatus.CREATED);
     }
 
+    @GetMapping("/verify-email")
+    @Operation(summary = "Verifica o usuário por email")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Usuário verificado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Falha esperada ao verificar usuário")
+    })
+    public ResponseEntity<?> verifyEmail(@RequestParam String token) {
+        return ResultHttpResponseHelper.respond(userService.verifyEmail(token), HttpStatus.OK);
+    }
+
     @PatchMapping("/{userId}/userInfo")
     @Operation(summary = "Atualiza informações adicionais do usuário, como nome completo e data de nascimento")
     @ApiResponses({
