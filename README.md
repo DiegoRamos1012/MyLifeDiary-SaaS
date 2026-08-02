@@ -1,4 +1,6 @@
-# MyLifeDiary SaaS
+# MyLifeDiary
+
+> "Um espaço digital para cuidar da sua mente, construir hábitos saudáveis e evoluir um dia de cada vez"
 
 Backend do **MyLifeDiary**, construído com **Spring Boot**, com foco em:
 
@@ -42,6 +44,12 @@ O projeto também já possui um módulo de autenticação JWT com emissão de ac
 - H2 para ambiente local
 - PostgreSQL para ambiente alvo
 - Lombok
+
+---
+
+## Qualidade e cobertura de testes
+
+A meta mínima de cobertura de testes automatizados do projeto é de **80%**.
 
 ---
 
@@ -195,6 +203,33 @@ No Windows PowerShell:
 
 ---
 
+## Execução com Docker
+
+### Pré-requisitos
+
+- Docker
+- Docker Compose
+
+### Subir aplicação e banco de dados
+
+```bash
+cp env.example .env
+docker compose up --build -d
+```
+
+Serviços disponíveis:
+
+- API: `http://localhost:8080`
+- PostgreSQL: `localhost:5433`
+
+### Parar os serviços
+
+```bash
+docker compose down
+```
+
+---
+
 ## Swagger / OpenAPI
 
 A documentação da API é exposta via configuração central de Swagger.
@@ -244,4 +279,3 @@ A ideia do projeto é manter o backend:
 
 Este repositório ainda está em evolução. A documentação foi pensada para acompanhar o código e servir como contexto
 confiável conforme novos módulos forem sendo adicionados.
-
