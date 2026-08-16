@@ -9,9 +9,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.*;
 
 /**
  * Testes unitários do job responsável por mover usuários de PENDING_DELETION para INACTIVE.
@@ -28,7 +26,7 @@ class UserDeletionJobTest {
         Clock clock = Clock.fixed(now, ZoneOffset.UTC);
         UserDeletionJob userDeletionJob = new UserDeletionJob(userRepository, clock);
 
-        userDeletionJob.processPendingDeletionUsers();
+        userDeletionJob.deactivateExpiredPendingDeletionUsers();
 
         Instant threshold = now.minus(30, ChronoUnit.DAYS);
         verify(userRepository).markPendingDeletionUsersAsInactive(

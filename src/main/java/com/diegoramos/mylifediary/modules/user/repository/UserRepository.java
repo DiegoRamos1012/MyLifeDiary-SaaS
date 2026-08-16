@@ -98,4 +98,16 @@ public interface UserRepository extends JpaRepository<User, UUID> {
             @Param("inactiveStatus") UserStatus inactiveStatus,
             @Param("threshold") Instant threshold
     );
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+                DELETE FROM User u
+                WHERE u.emailVerified = false
+                  AND u.createdAt < :threshold
+            """)
+    void hardDeleteUnverifiedUsers(
+            @Param("threshold") Instant threshold
+    );
+
+
 }
