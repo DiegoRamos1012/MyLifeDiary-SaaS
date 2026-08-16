@@ -58,8 +58,9 @@ public class HabitService {
     public Result<HabitResponseDTO> createHabit(UUID userId, @NonNull CreateHabitRequest request) {
         Optional<User> maybeUser = userRepository.findById(userId);
         if (maybeUser.isEmpty()) {
-            return Result.failure("HABIT_USER_NOT_FOUND", "Usuário nao encontrado");
+            return Result.failure("HABIT_USER_NOT_FOUND", "Usuário não encontrado");
         }
+
         try {
             Habit habit = Habit.create(
                     maybeUser.get(),
@@ -69,6 +70,7 @@ public class HabitService {
                     request.goalDaily(),
                     request.startDate()
             );
+
             Habit saved = habitRepository.save(habit);
             return Result.success(HabitResponseDTO.from(saved));
         } catch (DomainException ex) {
@@ -79,71 +81,143 @@ public class HabitService {
     /**
      * Cria ou atualiza o log diário de um hábito.
      */
-    public Result<HabitLogResponseDTO> markHabitDay(UUID habitId, @NonNull MarkHabitDayRequest request) {
+    public Result<HabitLogResponseDTO> markHabitDay(
+            UUID habitId,
+            @NonNull MarkHabitDayRequest request
+    ) {
+        LocalDate today = LocalDate.now(clock);
+
         Optional<Habit> maybeHabit = habitRepository.findById(habitId);
         if (maybeHabit.isEmpty()) {
-            return Result.failure("HABIT_NOT_FOUND", "Habito nao encontrado");
+            return Result.failure("HABIT_NOT_FOUND", "Hábito não encontrado");
         }
+
         Habit habit = maybeHabit.get();
+
         if (request.date().isBefore(habit.getStartDate())) {
-            return Result.failure("HABIT_LOG_BEFORE_START_DATE", "Data do log nao pode ser anterior ao inicio do habito");
+            return Result.failure(
+                    "HABIT_LOG_BEFORE_START_DATE",
+                    "Data do log não pode ser anterior ao início do hábito"
+            );
         }
+
+        if (request.date().isAfter(today)) {
+            return Result.failure(
+                    "HABIT_LOG_AFTER_TODAY",
+                    "Data do log não pode ser depois da data atual"
+            );
+        }
+
         try {
-            Optional<HabitLog> maybeLog = habitLogRepository.findByHabitIdAndDate(habitId, request.date());
+            Optional<HabitLog> maybeLog =
+                    habitLogRepository.findByHabitIdAndDate(habitId, request.date());
+
             HabitLog saved = maybeLog
                     .map(existing -> {
                         existing.mark(request.completed(), request.note());
                         return habitLogRepository.save(existing);
                     })
                     .orElseGet(() -> habitLogRepository.save(
-                            HabitLog.create(habit, request.date(), request.completed(), request.note())
+                            HabitLog.create(
+                                    habit,
+                                    request.date(),
+                                    request.completed(),
+                                    request.note()
+                            )
                     ));
+
             return Result.success(HabitLogResponseDTO.from(saved));
         } catch (DomainException ex) {
             return Result.failure("HABIT_INVALID_INPUT", ex.getMessage());
         }
     }
 
+    /**
+     * Busca o histórico de logs de um hábito, opcionalmente filtrado por intervalo.
+     */
     @Transactional(readOnly = true)
-    /** Busca o histórico de logs de um hábito, opcionalmente filtrado por intervalo. */
-    public Result<List<HabitLogResponseDTO>> getHabitLogs(UUID habitId, LocalDate fromDate, LocalDate toDate) {
+    public Result<List<HabitLogResponseDTO>> getHabitLogs(
+            UUID habitId,
+            LocalDate fromDate,
+            LocalDate toDate
+    ) {
         if (!habitRepository.existsById(habitId)) {
-            return Result.failure("HABIT_NOT_FOUND", "Habito nao encontrado");
+            return Result.failure("HABIT_NOT_FOUND", "Hábito não encontrado");
         }
+
         if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
-            return Result.failure("HABIT_LOG_INVALID_RANGE", "Intervalo de datas invalido");
+            return Result.failure(
+                    "HABIT_LOG_INVALID_RANGE",
+                    "Intervalo de datas inválido"
+            );
         }
+
         List<HabitLog> logs;
+
         if (fromDate != null && toDate != null) {
-            logs = habitLogRepository.findByHabitIdAndDateBetweenOrderByDateAsc(habitId, fromDate, toDate);
+            logs = habitLogRepository
+                    .findByHabitIdAndDateBetweenOrderByDateAsc(
+                            habitId,
+                            fromDate,
+                            toDate
+                    );
         } else if (fromDate != null) {
-            logs = habitLogRepository.findByHabitIdAndDateGreaterThanEqualOrderByDateAsc(habitId, fromDate);
+            logs = habitLogRepository
+                    .findByHabitIdAndDateGreaterThanEqualOrderByDateAsc(
+                            habitId,
+                            fromDate
+                    );
         } else if (toDate != null) {
-            logs = habitLogRepository.findByHabitIdAndDateLessThanEqualOrderByDateAsc(habitId, toDate);
+            logs = habitLogRepository
+                    .findByHabitIdAndDateLessThanEqualOrderByDateAsc(
+                            habitId,
+                            toDate
+                    );
         } else {
             logs = habitLogRepository.findByHabitIdOrderByDateAsc(habitId);
         }
-        return Result.success(logs.stream().map(HabitLogResponseDTO::from).toList());
+
+        return Result.success(
+                logs.stream()
+                        .map(HabitLogResponseDTO::from)
+                        .toList()
+        );
     }
 
+    /**
+     * Calcula a streak atual do hábito informado.
+     */
     @Transactional(readOnly = true)
-    /** Calcula a streak atual do hábito informado. */
     public Result<HabitStreakResponseDTO> getHabitStreak(UUID habitId) {
         if (!habitRepository.existsById(habitId)) {
-            return Result.failure("HABIT_NOT_FOUND", "Habito nao encontrado");
+            return Result.failure("HABIT_NOT_FOUND", "Hábito não encontrado");
         }
-        List<HabitLog> logs = habitLogRepository.findByHabitIdOrderByDateDesc(habitId);
+
+        List<HabitLog> logs =
+                habitLogRepository.findByHabitIdOrderByDateDesc(habitId);
+
         if (logs.isEmpty()) {
-            return Result.success(new HabitStreakResponseDTO(habitId, 0));
+            return Result.success(
+                    new HabitStreakResponseDTO(habitId, 0)
+            );
         }
+
         Map<LocalDate, Boolean> statusByDate = logs.stream()
-                .collect(Collectors.toMap(HabitLog::getDate, HabitLog::isCompleted));
+                .collect(Collectors.toMap(
+                        HabitLog::getDate,
+                        HabitLog::isCompleted
+                ));
+
         int streak = 0;
-        LocalDate cursor = LocalDate.now(clock);
-        while (Boolean.TRUE.equals(statusByDate.get(cursor))) {
+        LocalDate today = LocalDate.now(clock);
+
+        while (Boolean.TRUE.equals(statusByDate.get(today))) {
             streak++;
-            cursor = cursor.minusDays(1);
+            today = today.minusDays(1);
         }
-        return Result.success(new HabitStreakResponseDTO(habitId, streak));
+
+        return Result.success(
+                new HabitStreakResponseDTO(habitId, streak)
+        );
     }
 }
