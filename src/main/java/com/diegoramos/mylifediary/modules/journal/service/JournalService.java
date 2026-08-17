@@ -4,11 +4,7 @@ import com.diegoramos.mylifediary.common.exception.DomainException;
 import com.diegoramos.mylifediary.common.result.Result;
 import com.diegoramos.mylifediary.modules.journal.domain.entity.Journal;
 import com.diegoramos.mylifediary.modules.journal.domain.entity.JournalEntry;
-import com.diegoramos.mylifediary.modules.journal.dto.request.CreateJournalEntryRequest;
-import com.diegoramos.mylifediary.modules.journal.dto.request.CreateJournalRequest;
-import com.diegoramos.mylifediary.modules.journal.dto.request.LockJournalRequest;
-import com.diegoramos.mylifediary.modules.journal.dto.request.UnlockJournalRequest;
-import com.diegoramos.mylifediary.modules.journal.dto.request.UpdateJournalEntryRequest;
+import com.diegoramos.mylifediary.modules.journal.dto.request.*;
 import com.diegoramos.mylifediary.modules.journal.dto.response.JournalEntryResponseDTO;
 import com.diegoramos.mylifediary.modules.journal.dto.response.JournalResponseDTO;
 import com.diegoramos.mylifediary.modules.journal.repository.JournalEntryRepository;
@@ -29,21 +25,24 @@ import java.util.UUID;
  * Serviço de aplicação do módulo de diário.
  *
  * <p>Orquestra validações de acesso, regras de bloqueio por senha e operações
- * de notas diárias. Erros esperados de negócio são retornados via
- * {@link Result#failure(String, String)}.</p>
+ * de notas diárias. Um diário trancado exige a senha para qualquer acesso
+ * ao seu conteúdo, mas a validação da senha não destranca o diário.</p>
  */
 @Service
 @Transactional
 public class JournalService {
+
     private final JournalRepository journalRepository;
     private final JournalEntryRepository journalEntryRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public JournalService(JournalRepository journalRepository,
-                          JournalEntryRepository journalEntryRepository,
-                          UserRepository userRepository,
-                          PasswordEncoder passwordEncoder) {
+    public JournalService(
+            JournalRepository journalRepository,
+            JournalEntryRepository journalEntryRepository,
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder
+    ) {
         this.journalRepository = journalRepository;
         this.journalEntryRepository = journalEntryRepository;
         this.userRepository = userRepository;
@@ -54,31 +53,57 @@ public class JournalService {
      * Cria um diário para o usuário informado.
      *
      * <p>Quando {@code dto.isLocked()} for verdadeiro, exige senha e já salva
-     * o diário trancado com hash Argon gerado pelo {@link PasswordEncoder}.</p>
+     * o diário trancado com o hash da senha.</p>
      *
      * @param userId id do usuário dono do diário
      * @param dto    dados de criação do diário
      * @return resultado com o diário criado ou falha de negócio
      */
-    public Result<JournalResponseDTO> createJournal(UUID userId, CreateJournalRequest dto) {
+    public Result<JournalResponseDTO> createJournal(
+            UUID userId,
+            CreateJournalRequest dto
+    ) {
         Optional<User> maybeUser = userRepository.findById(userId);
+
         if (maybeUser.isEmpty()) {
-            return Result.failure("JOURNAL_USER_NOT_FOUND", "Usuário não encontrado");
+            return Result.failure(
+                    "JOURNAL_USER_NOT_FOUND",
+                    "Usuário não encontrado"
+            );
         }
 
-        if (dto.isLocked() && (dto.password() == null || dto.password().isBlank())) {
-            return Result.failure("JOURNAL_PASSWORD_REQUIRED", "Informe uma senha para trancar o diário");
+        if (dto.isLocked()
+                && (dto.password() == null || dto.password().isBlank())) {
+            return Result.failure(
+                    "JOURNAL_PASSWORD_REQUIRED",
+                    "Informe uma senha para trancar o diário"
+            );
         }
 
         try {
-            Journal journal = Journal.create(maybeUser.get(), dto.title(), false);
+            Journal journal = Journal.create(
+                    maybeUser.get(),
+                    dto.title(),
+                    false
+            );
+
             if (dto.isLocked()) {
-                journal.lockWithPasswordHash(passwordEncoder.encode(dto.password()));
+                journal.lockWithPasswordHash(
+                        passwordEncoder.encode(dto.password())
+                );
             }
+
             Journal saved = journalRepository.save(journal);
-            return Result.success(JournalResponseDTO.from(saved));
+
+            return Result.success(
+                    JournalResponseDTO.from(saved)
+            );
+
         } catch (DomainException ex) {
-            return Result.failure("JOURNAL_INVALID_INPUT", ex.getMessage());
+            return Result.failure(
+                    "JOURNAL_INVALID_INPUT",
+                    ex.getMessage()
+            );
         }
     }
 
@@ -87,204 +112,404 @@ public class JournalService {
      *
      * @param userId    id do usuário dono do diário
      * @param journalId id do diário
-     * @param dto       senha em texto puro para gerar hash
+     * @param dto       senha em texto puro
      * @return resultado com o diário trancado ou falha de negócio
      */
-    public Result<JournalResponseDTO> lockJournal(UUID userId, UUID journalId, LockJournalRequest dto) {
-        Optional<Journal> maybeJournal = journalRepository.findByIdAndUserId(journalId, userId);
+    public Result<JournalResponseDTO> lockJournal(
+            UUID userId,
+            UUID journalId,
+            LockJournalRequest dto
+    ) {
+        Optional<Journal> maybeJournal =
+                journalRepository.findByIdAndUserId(journalId, userId);
+
         if (maybeJournal.isEmpty()) {
-            return Result.failure("JOURNAL_NOT_FOUND", "Diário não encontrado");
+            return Result.failure(
+                    "JOURNAL_NOT_FOUND",
+                    "Diário não encontrado"
+            );
         }
 
         Journal journal = maybeJournal.get();
+
         if (journal.isLocked()) {
-            return Result.failure("JOURNAL_ALREADY_LOCKED", "O diário já está trancado");
+            return Result.failure(
+                    "JOURNAL_ALREADY_LOCKED",
+                    "O diário já está trancado"
+            );
+        }
+
+        if (dto.password() == null || dto.password().isBlank()) {
+            return Result.failure(
+                    "JOURNAL_PASSWORD_REQUIRED",
+                    "Informe uma senha para trancar o diário"
+            );
         }
 
         try {
-            journal.lockWithPasswordHash(passwordEncoder.encode(dto.password()));
+            journal.lockWithPasswordHash(
+                    passwordEncoder.encode(dto.password())
+            );
+
             Journal saved = journalRepository.save(journal);
-            return Result.success(JournalResponseDTO.from(saved));
+
+            return Result.success(
+                    JournalResponseDTO.from(saved)
+            );
+
         } catch (DomainException ex) {
-            return Result.failure("JOURNAL_INVALID_INPUT", ex.getMessage());
+            return Result.failure(
+                    "JOURNAL_INVALID_INPUT",
+                    ex.getMessage()
+            );
         }
     }
 
     /**
      * Destranca um diário validando a senha atual.
      *
+     * <p>Diferentemente de {@link #getAccessibleJournal(UUID, UUID, String)},
+     * este método realmente altera o estado do diário para destrancado.</p>
+     *
      * @param userId    id do usuário dono do diário
      * @param journalId id do diário
-     * @param dto       senha em texto puro para validação do hash
+     * @param dto       senha em texto puro
      * @return resultado com o diário destrancado ou falha de negócio
      */
-    public Result<JournalResponseDTO> unlockJournal(UUID userId, UUID journalId, UnlockJournalRequest dto) {
-        Optional<Journal> maybeJournal = journalRepository.findByIdAndUserId(journalId, userId);
+    public Result<JournalResponseDTO> unlockJournal(
+            UUID userId,
+            UUID journalId,
+            UnlockJournalRequest dto
+    ) {
+        Optional<Journal> maybeJournal =
+                journalRepository.findByIdAndUserId(journalId, userId);
+
         if (maybeJournal.isEmpty()) {
-            return Result.failure("JOURNAL_NOT_FOUND", "Diário não encontrado");
+            return Result.failure(
+                    "JOURNAL_NOT_FOUND",
+                    "Diário não encontrado"
+            );
         }
 
         Journal journal = maybeJournal.get();
+
         if (!journal.isLocked()) {
-            return Result.failure("JOURNAL_NOT_LOCKED", "O diário já está destrancado");
+            return Result.failure(
+                    "JOURNAL_NOT_LOCKED",
+                    "O diário já está destrancado"
+            );
         }
 
         String storedHash = journal.getPasswordHash();
-        if (storedHash == null || !passwordEncoder.matches(dto.password(), storedHash)) {
-            return Result.failure("JOURNAL_INVALID_PASSWORD", "Senha inválida");
+
+        if (dto.password() == null
+                || storedHash == null
+                || !passwordEncoder.matches(dto.password(), storedHash)) {
+            return Result.failure(
+                    "JOURNAL_INVALID_PASSWORD",
+                    "Senha inválida"
+            );
         }
 
         try {
             journal.unlock();
+
             Journal saved = journalRepository.save(journal);
-            return Result.success(JournalResponseDTO.from(saved));
+
+            return Result.success(
+                    JournalResponseDTO.from(saved)
+            );
+
         } catch (DomainException ex) {
-            return Result.failure("JOURNAL_INVALID_INPUT", ex.getMessage());
+            return Result.failure(
+                    "JOURNAL_INVALID_INPUT",
+                    ex.getMessage()
+            );
         }
     }
 
     /**
      * Cria uma nota diária no diário informado.
      *
+     * <p>Se o diário estiver trancado, a senha é obrigatória.
+     * A validação da senha não destranca o diário.</p>
+     *
      * @param userId    id do usuário dono do diário
      * @param journalId id do diário
      * @param dto       dados da nota diária
+     * @param password  senha do diário, quando necessário
      * @return resultado com a nota criada ou falha de negócio
      */
-    public Result<JournalEntryResponseDTO> createEntry(UUID userId, UUID journalId, CreateJournalEntryRequest dto) {
-        Result<Journal> journalResult = getUnlockedJournal(userId, journalId);
+    public Result<JournalEntryResponseDTO> createEntry(
+            UUID userId,
+            UUID journalId,
+            CreateJournalEntryRequest dto,
+            String password
+    ) {
+        Result<Journal> journalResult =
+                getAccessibleJournal(userId, journalId, password);
+
         if (journalResult.isFailure()) {
             return Result.failure(journalResult.getError());
         }
 
-        if (journalEntryRepository.existsByJournalIdAndEntryDate(journalId, dto.entryDate())) {
-            return Result.failure("JOURNAL_ENTRY_ALREADY_EXISTS_FOR_DATE", "Já existe uma nota para essa data");
+        if (journalEntryRepository.existsByJournalIdAndEntryDate(
+                journalId,
+                dto.entryDate()
+        )) {
+            return Result.failure(
+                    "JOURNAL_ENTRY_ALREADY_EXISTS_FOR_DATE",
+                    "Já existe uma nota para essa data"
+            );
         }
 
         try {
-            JournalEntry entry = JournalEntry.create(journalResult.getValue(), dto.entryDate(), dto.content(), dto.mood());
+            JournalEntry entry = JournalEntry.create(
+                    journalResult.getValue(),
+                    dto.entryDate(),
+                    dto.content(),
+                    dto.mood()
+            );
+
             JournalEntry saved = journalEntryRepository.save(entry);
-            return Result.success(JournalEntryResponseDTO.from(saved));
+
+            return Result.success(
+                    JournalEntryResponseDTO.from(saved)
+            );
+
         } catch (DomainException ex) {
-            return Result.failure("JOURNAL_ENTRY_INVALID_INPUT", ex.getMessage());
+            return Result.failure(
+                    "JOURNAL_ENTRY_INVALID_INPUT",
+                    ex.getMessage()
+            );
         }
     }
 
     /**
      * Atualiza conteúdo e humor de uma nota existente.
      *
-     * @param userId    id do usuário dono do diário
-     * @param journalId id do diário
-     * @param entryId   id da nota
-     * @param dto       novos dados da nota
-     * @return resultado com a nota atualizada ou falha de negócio
+     * <p>Se o diário estiver trancado, a senha é obrigatória.
+     * A validação da senha não destranca o diário.</p>
      */
-    public Result<JournalEntryResponseDTO> updateEntry(UUID userId,
-                                                       UUID journalId,
-                                                       UUID entryId,
-                                                       UpdateJournalEntryRequest dto) {
-        Result<Journal> journalResult = getUnlockedJournal(userId, journalId);
+    public Result<JournalEntryResponseDTO> updateEntry(
+            UUID userId,
+            UUID journalId,
+            UUID entryId,
+            UpdateJournalEntryRequest dto,
+            String password
+    ) {
+        Result<Journal> journalResult =
+                getAccessibleJournal(userId, journalId, password);
+
         if (journalResult.isFailure()) {
             return Result.failure(journalResult.getError());
         }
 
-        Optional<JournalEntry> maybeEntry = journalEntryRepository.findByIdAndJournalId(entryId, journalId);
+        Optional<JournalEntry> maybeEntry =
+                journalEntryRepository.findByIdAndJournalId(
+                        entryId,
+                        journalId
+                );
+
         if (maybeEntry.isEmpty()) {
-            return Result.failure("JOURNAL_ENTRY_NOT_FOUND", "Nota do diário não encontrada");
+            return Result.failure(
+                    "JOURNAL_ENTRY_NOT_FOUND",
+                    "Nota do diário não encontrada"
+            );
         }
 
         try {
             JournalEntry entry = maybeEntry.get();
-            entry.update(dto.content(), dto.mood());
-            JournalEntry saved = journalEntryRepository.save(entry);
-            return Result.success(JournalEntryResponseDTO.from(saved));
+
+            entry.update(
+                    dto.content(),
+                    dto.mood()
+            );
+
+            JournalEntry saved =
+                    journalEntryRepository.save(entry);
+
+            return Result.success(
+                    JournalEntryResponseDTO.from(saved)
+            );
+
         } catch (DomainException ex) {
-            return Result.failure("JOURNAL_ENTRY_INVALID_INPUT", ex.getMessage());
+            return Result.failure(
+                    "JOURNAL_ENTRY_INVALID_INPUT",
+                    ex.getMessage()
+            );
         }
     }
 
     /**
      * Exclui uma nota de diário.
      *
-     * @param userId    id do usuário dono do diário
-     * @param journalId id do diário
-     * @param entryId   id da nota
-     * @return sucesso vazio ou falha de negócio
+     * <p>Se o diário estiver trancado, a senha é obrigatória.</p>
      */
-    public Result<Void> deleteEntry(UUID userId, UUID journalId, UUID entryId) {
-        Result<Journal> journalResult = getUnlockedJournal(userId, journalId);
+    public Result<Void> deleteEntry(
+            UUID userId,
+            UUID journalId,
+            UUID entryId,
+            String password
+    ) {
+        Result<Journal> journalResult =
+                getAccessibleJournal(userId, journalId, password);
+
         if (journalResult.isFailure()) {
             return Result.failure(journalResult.getError());
         }
 
-        Optional<JournalEntry> maybeEntry = journalEntryRepository.findByIdAndJournalId(entryId, journalId);
+        Optional<JournalEntry> maybeEntry =
+                journalEntryRepository.findByIdAndJournalId(
+                        entryId,
+                        journalId
+                );
+
         if (maybeEntry.isEmpty()) {
-            return Result.failure("JOURNAL_ENTRY_NOT_FOUND", "Nota do diário não encontrada");
+            return Result.failure(
+                    "JOURNAL_ENTRY_NOT_FOUND",
+                    "Nota do diário não encontrada"
+            );
         }
 
         journalEntryRepository.delete(maybeEntry.get());
+
         return Result.success(null);
     }
 
     /**
      * Busca uma nota específica por id.
      *
-     * @param userId    id do usuário dono do diário
-     * @param journalId id do diário
-     * @param entryId   id da nota
-     * @return nota encontrada ou falha de negócio
+     * <p>Um diário trancado exige a senha para visualizar seu conteúdo.</p>
      */
     @Transactional(readOnly = true)
-    public Result<JournalEntryResponseDTO> findEntry(UUID userId, UUID journalId, UUID entryId) {
-        Optional<Journal> maybeJournal = journalRepository.findByIdAndUserId(journalId, userId);
-        if (maybeJournal.isEmpty()) {
-            return Result.failure("JOURNAL_NOT_FOUND", "Diário não encontrado");
+    public Result<JournalEntryResponseDTO> findEntry(
+            UUID userId,
+            UUID journalId,
+            UUID entryId,
+            String password
+    ) {
+        Result<Journal> journalResult =
+                getAccessibleJournal(userId, journalId, password);
+
+        if (journalResult.isFailure()) {
+            return Result.failure(journalResult.getError());
         }
 
-        Optional<JournalEntry> maybeEntry = journalEntryRepository.findByIdAndJournalId(entryId, journalId);
-        return maybeEntry.map(journalEntry -> Result.success(JournalEntryResponseDTO.from(journalEntry)))
-                .orElseGet(() -> Result.failure("JOURNAL_ENTRY_NOT_FOUND", "Nota do diário não encontrada"));
+        Optional<JournalEntry> maybeEntry =
+                journalEntryRepository.findByIdAndJournalId(
+                        entryId,
+                        journalId
+                );
 
+        return maybeEntry
+                .map(entry ->
+                        Result.success(
+                                JournalEntryResponseDTO.from(entry)
+                        )
+                )
+                .orElseGet(() ->
+                        Result.failure(
+                                "JOURNAL_ENTRY_NOT_FOUND",
+                                "Nota do diário não encontrada"
+                        )
+                );
     }
 
     /**
-     * Lista notas de um diário de forma paginada (mais recentes primeiro).
+     * Lista notas de um diário de forma paginada.
      *
-     * @param userId    id do usuário dono do diário
-     * @param journalId id do diário
-     * @param page      número da página (base 0)
-     * @param size      tamanho da página
-     * @return página de notas ou falha de negócio
+     * <p>Um diário trancado exige a senha para visualizar seu conteúdo.</p>
      */
     @Transactional(readOnly = true)
-    public Result<Page<JournalEntryResponseDTO>> listEntries(UUID userId, UUID journalId, int page, int size) {
-        Optional<Journal> maybeJournal = journalRepository.findByIdAndUserId(journalId, userId);
-        if (maybeJournal.isEmpty()) {
-            return Result.failure("JOURNAL_NOT_FOUND", "Diário não encontrado");
+    public Result<Page<JournalEntryResponseDTO>> listEntries(
+            UUID userId,
+            UUID journalId,
+            int page,
+            int size,
+            String password
+    ) {
+        Result<Journal> journalResult =
+                getAccessibleJournal(userId, journalId, password);
+
+        if (journalResult.isFailure()) {
+            return Result.failure(journalResult.getError());
         }
 
         Pageable pageable = PageRequest.of(page, size);
-        Page<JournalEntryResponseDTO> entries = journalEntryRepository
-                .findByJournalIdOrderByEntryDateDesc(journalId, pageable)
-                .map(JournalEntryResponseDTO::from);
+
+        Page<JournalEntryResponseDTO> entries =
+                journalEntryRepository
+                        .findByJournalIdOrderByEntryDateDesc(
+                                journalId,
+                                pageable
+                        )
+                        .map(JournalEntryResponseDTO::from);
 
         return Result.success(entries);
     }
 
     /**
-     * Valida existência e estado de desbloqueio de um diário para operações de escrita.
+     * Valida se o usuário pode acessar o conteúdo do diário.
+     *
+     * <p>A regra é:</p>
+     * <ul>
+     *     <li>Diário inexistente → acesso negado;</li>
+     *     <li>Diário desbloqueado → acesso permitido;</li>
+     *     <li>Diário trancado + senha correta → acesso permitido;</li>
+     *     <li>Diário trancado + senha ausente → acesso negado;</li>
+     *     <li>Diário trancado + senha incorreta → acesso negado.</li>
+     * </ul>
+     *
+     * <p>Importante: validar a senha aqui NÃO destranca o diário.
+     * O campo {@code locked} continua verdadeiro até que
+     * {@link #unlockJournal(UUID, UUID, UnlockJournalRequest)} seja chamado.</p>
      */
-    private Result<Journal> getUnlockedJournal(UUID userId, UUID journalId) {
-        Optional<Journal> maybeJournal = journalRepository.findByIdAndUserId(journalId, userId);
+    private Result<Journal> getAccessibleJournal(
+            UUID userId,
+            UUID journalId,
+            String password
+    ) {
+        Optional<Journal> maybeJournal =
+                journalRepository.findByIdAndUserId(
+                        journalId,
+                        userId
+                );
+
         if (maybeJournal.isEmpty()) {
-            return Result.failure("JOURNAL_NOT_FOUND", "Diário não encontrado");
+            return Result.failure(
+                    "JOURNAL_NOT_FOUND",
+                    "Diário não encontrado"
+            );
         }
 
         Journal journal = maybeJournal.get();
-        if (journal.isLocked()) {
-            return Result.failure("JOURNAL_LOCKED", "O diário está trancado");
+
+        // Diário desbloqueado não exige senha.
+        if (!journal.isLocked()) {
+            return Result.success(journal);
         }
 
+        // Diário trancado exige senha.
+        if (password == null || password.isBlank()) {
+            return Result.failure(
+                    "JOURNAL_PASSWORD_REQUIRED",
+                    "Informe a senha do diário"
+            );
+        }
+
+        String storedHash = journal.getPasswordHash();
+
+        if (storedHash == null
+                || !passwordEncoder.matches(password, storedHash)) {
+            return Result.failure(
+                    "JOURNAL_INVALID_PASSWORD",
+                    "Senha inválida"
+            );
+        }
+
+        // A senha apenas autoriza o acesso.
+        // O diário continua trancado.
         return Result.success(journal);
     }
 }

@@ -56,9 +56,21 @@ public class HabitService {
      * Cria um hábito para o usuário informado.
      */
     public Result<HabitResponseDTO> createHabit(UUID userId, @NonNull CreateHabitRequest request) {
+        LocalDate today = LocalDate.now(clock);
+
         Optional<User> maybeUser = userRepository.findById(userId);
+
         if (maybeUser.isEmpty()) {
-            return Result.failure("HABIT_USER_NOT_FOUND", "Usuário não encontrado");
+            return Result.failure(
+                    "HABIT_USER_NOT_FOUND",
+                    "Usuário não encontrado"
+            );
+        }
+        if (request.startDate().isBefore(today)) {
+            return Result.failure(
+                    "ADDICTION_INVALID_START_DATE",
+                    "A data de início não pode ser anterior a hoje"
+            );
         }
 
         try {
