@@ -50,10 +50,29 @@ public class AddictionService {
         this.clock = clock;
     }
 
-    public Result<AddictionResponseDTO> createAddiction(UUID userId, @NonNull CreateAddictionRequest request) {
+    public Result<AddictionResponseDTO> createAddiction(
+            UUID userId,
+            @NonNull CreateAddictionRequest request
+    ) {
+        LocalDate today = LocalDate.now(clock);
+
         Optional<User> maybeUser = userRepository.findById(userId);
         if (maybeUser.isEmpty()) {
-            return Result.failure("ADDICTION_USER_NOT_FOUND", "Usuário não encontrado");
+            return Result.failure(
+                    "ADDICTION_USER_NOT_FOUND",
+                    "Usuário não encontrado"
+            );
+        }
+
+        if (request.startDate().isBefore(today)) {
+            return Result.failure(
+                    "ADDICTION_INVALID_START_DATE",
+                    "A data de início não pode ser anterior a hoje"
+            );
+        }
+
+        if (request.startDate().isAfter(today)) {
+            return Result.failure("ADDICTION_INVALID_CREATION_AFTER_TODAY", "A data de ínicio não pode ser depois de hoje");
         }
 
         try {
@@ -64,14 +83,21 @@ public class AddictionService {
                     request.category(),
                     request.startDate()
             );
+
             Addiction saved = addictionRepository.save(addiction);
             return Result.success(AddictionResponseDTO.from(saved));
+
         } catch (DomainException ex) {
-            return Result.failure("ADDICTION_INVALID_INPUT", ex.getMessage());
+            return Result.failure(
+                    "ADDICTION_INVALID_INPUT",
+                    ex.getMessage()
+            );
         }
     }
 
     public Result<AddictionLogResponseDTO> registerAddictionLog(UUID addictionId, UUID userId, @NonNull RegisterAddictionLogRequest request) {
+        LocalDate today = LocalDate.now(clock);
+
         Optional<Addiction> maybeAddiction = addictionRepository.findByIdAndUserId(addictionId, userId);
         if (maybeAddiction.isEmpty()) {
             return Result.failure("ADDICTION_NOT_FOUND", "Dependência não encontrada");
@@ -80,6 +106,13 @@ public class AddictionService {
         Addiction addiction = maybeAddiction.get();
         if (request.date().isBefore(addiction.getStartDate())) {
             return Result.failure("ADDICTION_LOG_BEFORE_START_DATE", "A data do registro não pode ser anterior ao início da dependência");
+        }
+
+        if (request.date().isAfter(today)) {
+            return Result.failure(
+                    "HABIT_LOG_AFTER_TODAY",
+                    "Data do log não pode ser depois da data atual"
+            );
         }
 
         try {

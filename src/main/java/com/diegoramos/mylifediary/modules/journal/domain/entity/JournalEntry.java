@@ -39,6 +39,7 @@ public class JournalEntry extends BaseEntity {
     @Column(name = "date", nullable = false)
     private LocalDate entryDate;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "mood", nullable = false)
     private MoodTypes mood;
 
