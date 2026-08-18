@@ -131,6 +131,20 @@ public class AddictionService {
         }
     }
 
+    public Result<AddictionResponseDTO> deleteAddiction(UUID addictionId, UUID userId) {
+        try {
+            Addiction addiction = addictionRepository.findByIdAndUserId(addictionId, userId)
+                    .orElseThrow(() -> new DomainException("Dependência não encontrada"));
+
+            addictionRepository.delete(addiction);
+
+            return Result.success(null);
+        } catch (DomainException ex) {
+            return Result.failure("ADDICTION_DELETION_FAILED", ex.getMessage());
+        }
+    }
+
+
     @Transactional(readOnly = true)
     public Result<List<AddictionLogResponseDTO>> getAddictionLogs(UUID addictionId, UUID userId, LocalDate fromDate, LocalDate toDate) {
         if (!addictionRepository.existsByIdAndUserId(addictionId, userId)) {

@@ -74,7 +74,7 @@ public class AuthService {
         RefreshToken refreshToken = RefreshToken.create(user.getId(), refreshTokenValue, calculateRefreshTokenExpiration(clock.instant()));
         refreshTokenRepository.save(refreshToken);
 
-        String token = jwtService.generateToken(user.getEmail(), resolveRole(user));
+        String token = jwtService.generateToken(user.getId(), user.getEmail(), resolveRole(user));
         long expiresIn = jwtService.getExpirationSeconds();
 
         AuthResponse response = new AuthResponse(token, refreshTokenValue, "Bearer", expiresIn);
@@ -109,7 +109,7 @@ public class AuthService {
         RefreshToken newRefreshToken = RefreshToken.create(user.getId(), generateRefreshTokenValue(), calculateRefreshTokenExpiration(now));
         refreshTokenRepository.save(newRefreshToken);
 
-        String accessToken = jwtService.generateToken(user.getEmail(), resolveRole(user));
+        String accessToken = jwtService.generateToken(user.getId(), user.getEmail(), resolveRole(user));
         AuthResponse response = new AuthResponse(accessToken, newRefreshToken.getToken(), "Bearer", jwtService.getExpirationSeconds());
         return Result.success(response);
     }

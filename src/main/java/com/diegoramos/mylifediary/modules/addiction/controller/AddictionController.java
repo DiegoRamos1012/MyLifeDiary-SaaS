@@ -2,6 +2,7 @@ package com.diegoramos.mylifediary.modules.addiction.controller;
 
 import com.diegoramos.mylifediary.common.response.ResultHttpResponseHelper;
 import com.diegoramos.mylifediary.config.jwt.JwtService;
+import com.diegoramos.mylifediary.config.security.CustomUserDetails;
 import com.diegoramos.mylifediary.modules.addiction.dto.request.CreateAddictionRequest;
 import com.diegoramos.mylifediary.modules.addiction.dto.request.RegisterAddictionLogRequest;
 import com.diegoramos.mylifediary.modules.addiction.service.AddictionService;
@@ -14,6 +15,7 @@ import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -37,7 +39,7 @@ public class AddictionController {
     }
 
     @PostMapping("/users/{userId}")
-    @Operation(summary = "Cria uma dependência para o usuário")
+    @Operation(summary = "Cria uma dependência do usuário")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Dependência criada com sucesso"),
             @ApiResponse(responseCode = "400", description = "Dados inválidos"),
@@ -46,6 +48,22 @@ public class AddictionController {
     public ResponseEntity<?> createAddiction(@PathVariable UUID userId,
                                              @RequestBody @Valid CreateAddictionRequest request) {
         return ResultHttpResponseHelper.respond(addictionService.createAddiction(userId, request), HttpStatus.CREATED);
+    }
+
+    @DeleteMapping("/{addictionId}")
+    @Operation(summary = "Exclui uma dependência do usuário")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Dependência excluída com sucesso"),
+            @ApiResponse(responseCode = "403", description = "Usuário não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Dependência não encontrada")
+    })
+    public ResponseEntity<?> deleteAddiction(@PathVariable UUID addictionId,
+                                             @AuthenticationPrincipal CustomUserDetails currentUser) {
+        UUID userId = currentUser.getId();
+        return ResultHttpResponseHelper.respond(
+                addictionService.deleteAddiction(addictionId, userId),
+                HttpStatus.NO_CONTENT
+        );
     }
 
     @PutMapping("/{addictionId}/logs/users/{userId}")

@@ -4,6 +4,7 @@ import org.springframework.security.oauth2.jwt.*;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Component
 public class JwtService {
@@ -20,7 +21,7 @@ public class JwtService {
         this.properties = properties;
     }
 
-    public String generateToken(String email, String role) {
+    public String generateToken(UUID userId, String email, String role) {
         Instant now = Instant.now();
         Instant exp = now.plusSeconds(properties.getExpirationSeconds());
 
@@ -28,6 +29,7 @@ public class JwtService {
                 .issuer("mylifediary")
                 .issuedAt(now)
                 .expiresAt(exp)
+                .claim("userId", userId.toString())
                 .subject(email)
                 .claim("role", role)
                 .build();
