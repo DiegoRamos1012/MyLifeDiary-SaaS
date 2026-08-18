@@ -211,17 +211,7 @@ public class AddictionService {
         return Result.success(addictionRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable)
                 .map(AddictionResponseDTO::from));
     }
-
-    /**
-     * Convenience method to find addictions using the user's email (useful when
-     * the authenticated principal provides email as the JWT subject).
-     */
-    @Transactional(readOnly = true)
-    public Result<Page<AddictionResponseDTO>> findAllByEmail(String email, int page, int size) {
-        return userRepository.findByEmailIgnoreCase(email)
-                .map(user -> findAll(user.getId(), page, size))
-                .orElseGet(() -> Result.failure("ADDICTION_USER_NOT_FOUND", "Usuário não encontrado"));
-    }
+    
 }
 
 
