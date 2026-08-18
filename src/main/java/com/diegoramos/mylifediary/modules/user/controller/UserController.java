@@ -1,6 +1,7 @@
 package com.diegoramos.mylifediary.modules.user.controller;
 
 import com.diegoramos.mylifediary.common.response.ResultHttpResponseHelper;
+import com.diegoramos.mylifediary.config.security.CustomUserDetails;
 import com.diegoramos.mylifediary.modules.user.domain.enums.UserStatus;
 import com.diegoramos.mylifediary.modules.user.dto.request.CreateUserRequest;
 import com.diegoramos.mylifediary.modules.user.dto.request.UpdateEmailRequest;
@@ -18,6 +19,7 @@ import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -71,61 +73,76 @@ public class UserController {
         return ResultHttpResponseHelper.respond(userService.verifyEmail(token), HttpStatus.OK);
     }
 
-    @PatchMapping("/{userId}/userInfo")
+    @PatchMapping("userInfo")
     @Operation(summary = "Atualiza informações adicionais do usuário, como nome completo e data de nascimento")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Usuário atualizado com sucesso"),
             @ApiResponse(responseCode = "400", description = "Falha ao atualizar usuário"),
             @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
     })
-    public ResponseEntity<?> changeProfileInfo(@PathVariable UUID userId,
+    public ResponseEntity<?> changeProfileInfo(@AuthenticationPrincipal CustomUserDetails currentId,
                                                @RequestBody @Valid UpdateUserInfoRequest dto) {
+
+        UUID userId = currentId.getId();
+
         return ResultHttpResponseHelper.respond(userService.changeProfileInfo(userId, dto), HttpStatus.OK);
     }
 
-    @PatchMapping("/{userId}/changeEmail")
+    @PatchMapping("/changeEmail")
     @Operation(summary = "Atualiza o email do usuário")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Email atualizado com sucesso"),
             @ApiResponse(responseCode = "400", description = "Falha au atualizar email"),
             @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
     })
-    public ResponseEntity<?> changeEmail(@PathVariable UUID userId,
+    public ResponseEntity<?> changeEmail(@AuthenticationPrincipal CustomUserDetails currentId,
                                          @RequestBody @Valid UpdateEmailRequest dto) {
+
+        UUID userId = currentId.getId();
+
         return ResultHttpResponseHelper.respond(userService.changeEmail(userId, dto), HttpStatus.OK);
     }
 
-    @PatchMapping("/{userId}/changePassword")
+    @PatchMapping("/changePassword")
     @Operation(summary = "Atualiza a senha do usuário")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Senha atualizada com sucesso"),
             @ApiResponse(responseCode = "400", description = "Falha ao atualizar senha"),
             @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
     })
-    public ResponseEntity<?> changePassword(@PathVariable UUID userId,
+    public ResponseEntity<?> changePassword(@AuthenticationPrincipal CustomUserDetails currentId,
                                             @RequestBody @Valid UpdatePasswordRequest dto) {
+
+        UUID userId = currentId.getId();
+
         return ResultHttpResponseHelper.respond(userService.changePassword(userId, dto), HttpStatus.OK);
     }
 
-    @PatchMapping("/{userId}/deactivate")
-    @Operation(summary = "Solicita a desativação (deleção lógica) do usuário")
+    @PatchMapping("/deactivate")
+    @Operation(summary = "Solicita a desativação do usuário")
     @ApiResponses({
             @ApiResponse(responseCode = "202", description = "Solicitação de desativação recebida"),
             @ApiResponse(responseCode = "400", description = "Falha ao desativar usuário"),
             @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
     })
-    public ResponseEntity<?> deactivateUser(@PathVariable UUID userId) {
+    public ResponseEntity<?> deactivateUser(@AuthenticationPrincipal CustomUserDetails currentId) {
+
+        UUID userId = currentId.getId();
+
         return ResultHttpResponseHelper.respond(userService.deleteUser(userId), HttpStatus.ACCEPTED);
     }
 
-    @PatchMapping("/{userId}/reactivate")
+    @PatchMapping("/reactivate")
     @Operation(summary = "Reativa um usuário previamente desativado")
     @ApiResponses({
             @ApiResponse(responseCode = "202", description = "Solicitação de reativação recebida"),
             @ApiResponse(responseCode = "400", description = "Falha ao reativar usuário"),
             @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
     })
-    public ResponseEntity<?> reactivateUser(@PathVariable UUID userId) {
+    public ResponseEntity<?> reactivateUser(@AuthenticationPrincipal CustomUserDetails currentId) {
+
+        UUID userId = currentId.getId();
+        
         return ResultHttpResponseHelper.respond(userService.restoreUser(userId), HttpStatus.ACCEPTED);
     }
 
