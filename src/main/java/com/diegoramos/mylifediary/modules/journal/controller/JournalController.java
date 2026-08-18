@@ -1,6 +1,7 @@
 package com.diegoramos.mylifediary.modules.journal.controller;
 
 import com.diegoramos.mylifediary.common.response.ResultHttpResponseHelper;
+import com.diegoramos.mylifediary.config.security.CustomUserDetails;
 import com.diegoramos.mylifediary.modules.journal.dto.request.*;
 import com.diegoramos.mylifediary.modules.journal.service.JournalService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -32,7 +34,7 @@ public class JournalController {
         this.journalService = journalService;
     }
 
-    @PostMapping("/users/{userId}")
+    @PostMapping
     @Operation(summary = "Cria um diário para o usuário")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Diário criado com sucesso"),
@@ -40,16 +42,19 @@ public class JournalController {
             @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
     })
     public ResponseEntity<?> createJournal(
-            @PathVariable UUID userId,
+            @AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestBody @Valid CreateJournalRequest request
     ) {
+
+        UUID userId = currentUser.getId();
+
         return ResultHttpResponseHelper.respond(
                 journalService.createJournal(userId, request),
                 HttpStatus.CREATED
         );
     }
 
-    @PatchMapping("/users/{userId}/{journalId}/lock")
+    @PatchMapping("{journalId}/lock")
     @Operation(summary = "Tranca um diário com senha")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Diário trancado com sucesso"),
@@ -57,17 +62,20 @@ public class JournalController {
             @ApiResponse(responseCode = "404", description = "Diário não encontrado")
     })
     public ResponseEntity<?> lockJournal(
-            @PathVariable UUID userId,
+            @AuthenticationPrincipal CustomUserDetails currentUser,
             @PathVariable UUID journalId,
             @RequestBody @Valid LockJournalRequest request
     ) {
+
+        UUID userId = currentUser.getId();
+
         return ResultHttpResponseHelper.respond(
                 journalService.lockJournal(userId, journalId, request),
                 HttpStatus.OK
         );
     }
 
-    @PatchMapping("/users/{userId}/{journalId}/unlock")
+    @PatchMapping("{journalId}/unlock")
     @Operation(summary = "Destranca um diário com senha")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Diário destrancado com sucesso"),
@@ -75,17 +83,20 @@ public class JournalController {
             @ApiResponse(responseCode = "404", description = "Diário não encontrado")
     })
     public ResponseEntity<?> unlockJournal(
-            @PathVariable UUID userId,
+            @AuthenticationPrincipal CustomUserDetails currentUser,
             @PathVariable UUID journalId,
             @RequestBody @Valid UnlockJournalRequest request
     ) {
+
+        UUID userId = currentUser.getId();
+
         return ResultHttpResponseHelper.respond(
                 journalService.unlockJournal(userId, journalId, request),
                 HttpStatus.OK
         );
     }
 
-    @PostMapping("/users/{userId}/{journalId}/entries")
+    @PostMapping("{journalId}/entries")
     @Operation(
             summary = "Cria uma nota diária no diário",
             description = """
@@ -100,7 +111,7 @@ public class JournalController {
             @ApiResponse(responseCode = "404", description = "Diário não encontrado")
     })
     public ResponseEntity<?> createEntry(
-            @PathVariable UUID userId,
+            @AuthenticationPrincipal CustomUserDetails currentUser,
             @PathVariable UUID journalId,
             @RequestHeader(
                     value = JOURNAL_PASSWORD_HEADER,
@@ -108,6 +119,9 @@ public class JournalController {
             ) String password,
             @RequestBody @Valid CreateJournalEntryRequest request
     ) {
+
+        UUID userId = currentUser.getId();
+
         return ResultHttpResponseHelper.respond(
                 journalService.createEntry(
                         userId,
@@ -119,7 +133,7 @@ public class JournalController {
         );
     }
 
-    @PutMapping("/users/{userId}/{journalId}/entries/{entryId}")
+    @PutMapping("{journalId}/entries/{entryId}")
     @Operation(
             summary = "Atualiza uma nota diária",
             description = """
@@ -134,7 +148,7 @@ public class JournalController {
             @ApiResponse(responseCode = "404", description = "Diário ou nota não encontrados")
     })
     public ResponseEntity<?> updateEntry(
-            @PathVariable UUID userId,
+            @AuthenticationPrincipal CustomUserDetails currentUser,
             @PathVariable UUID journalId,
             @PathVariable UUID entryId,
             @RequestHeader(
@@ -143,6 +157,9 @@ public class JournalController {
             ) String password,
             @RequestBody @Valid UpdateJournalEntryRequest request
     ) {
+
+        UUID userId = currentUser.getId();
+
         return ResultHttpResponseHelper.respond(
                 journalService.updateEntry(
                         userId,
@@ -155,7 +172,7 @@ public class JournalController {
         );
     }
 
-    @DeleteMapping("/users/{userId}/{journalId}/entries/{entryId}")
+    @DeleteMapping("{journalId}/entries/{entryId}")
     @Operation(
             summary = "Remove uma nota diária",
             description = """
@@ -170,7 +187,7 @@ public class JournalController {
             @ApiResponse(responseCode = "404", description = "Diário ou nota não encontrados")
     })
     public ResponseEntity<?> deleteEntry(
-            @PathVariable UUID userId,
+            @AuthenticationPrincipal CustomUserDetails currentUser,
             @PathVariable UUID journalId,
             @PathVariable UUID entryId,
             @RequestHeader(
@@ -178,6 +195,9 @@ public class JournalController {
                     required = false
             ) String password
     ) {
+
+        UUID userId = currentUser.getId();
+
         return ResultHttpResponseHelper.respond(
                 journalService.deleteEntry(
                         userId,
@@ -189,7 +209,7 @@ public class JournalController {
         );
     }
 
-    @GetMapping("/users/{userId}/{journalId}/entries/{entryId}")
+    @GetMapping("/{journalId}/entries/{entryId}")
     @Operation(
             summary = "Busca uma nota diária por id",
             description = """
@@ -203,7 +223,7 @@ public class JournalController {
             @ApiResponse(responseCode = "404", description = "Diário ou nota não encontrados")
     })
     public ResponseEntity<?> findEntry(
-            @PathVariable UUID userId,
+            @AuthenticationPrincipal CustomUserDetails currentUser,
             @PathVariable UUID journalId,
             @PathVariable UUID entryId,
             @RequestHeader(
@@ -211,6 +231,9 @@ public class JournalController {
                     required = false
             ) String password
     ) {
+
+        UUID userId = currentUser.getId();
+
         return ResultHttpResponseHelper.respond(
                 journalService.findEntry(
                         userId,
@@ -222,7 +245,7 @@ public class JournalController {
         );
     }
 
-    @GetMapping("/users/{userId}/{journalId}/entries")
+    @GetMapping("{journalId}/entries")
     @Operation(
             summary = "Lista notas diárias do diário com paginação",
             description = """
@@ -236,7 +259,7 @@ public class JournalController {
             @ApiResponse(responseCode = "404", description = "Diário não encontrado")
     })
     public ResponseEntity<?> listEntries(
-            @PathVariable UUID userId,
+            @AuthenticationPrincipal CustomUserDetails currentUser,
             @PathVariable UUID journalId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -245,6 +268,9 @@ public class JournalController {
                     required = false
             ) String password
     ) {
+
+        UUID userId = currentUser.getId();
+        
         return ResultHttpResponseHelper.respond(
                 journalService.listEntries(
                         userId,
