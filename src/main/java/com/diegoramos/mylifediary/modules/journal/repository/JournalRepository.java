@@ -9,6 +9,6 @@ import java.util.UUID;
 
 @Repository
 public interface JournalRepository extends JpaRepository<Journal, UUID> {
-	Optional<Journal> findByIdAndUserId(UUID journalId, UUID userId);
+    Optional<Journal> findByIdAndUserId(UUID journalId, UUID userId);
 }
 

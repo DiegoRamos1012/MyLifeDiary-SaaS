@@ -107,6 +107,22 @@ public class JournalService {
         }
     }
 
+    public Result<JournalResponseDTO> deleteJournal(
+            UUID journalId,
+            UUID userId
+    ) {
+        try {
+            Journal journal = journalRepository.findByIdAndUserId(journalId, userId)
+                    .orElseThrow(() -> new DomainException("Diário não encontrado"));
+
+            journalRepository.delete(journal);
+            return Result.success(null);
+        } catch (DomainException ex) {
+            return Result.failure("JOURNAL_DELETION_FAILED", ex.getMessage());
+        }
+    }
+
+
     /**
      * Tranca um diário com senha.
      *

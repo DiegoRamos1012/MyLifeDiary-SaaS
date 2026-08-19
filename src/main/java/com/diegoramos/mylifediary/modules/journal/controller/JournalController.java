@@ -54,6 +54,24 @@ public class JournalController {
         );
     }
 
+    @DeleteMapping("/{journalId}")
+    @Operation(summary = "Exclui o diário selecionado")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Diário excluído com sucesso"),
+            @ApiResponse(responseCode = "403", description = "Usuário não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Diário não encontrado")
+    })
+    public ResponseEntity<?> deleteJournal(@PathVariable UUID journalId,
+                                           @AuthenticationPrincipal CustomUserDetails currentUser) {
+
+        UUID userId = currentUser.getId();
+
+        return ResultHttpResponseHelper.respond(
+                journalService.deleteJournal(journalId, userId),
+                HttpStatus.NO_CONTENT
+        );
+    }
+
     @PatchMapping("{journalId}/lock")
     @Operation(summary = "Tranca um diário com senha")
     @ApiResponses({
@@ -270,7 +288,7 @@ public class JournalController {
     ) {
 
         UUID userId = currentUser.getId();
-        
+
         return ResultHttpResponseHelper.respond(
                 journalService.listEntries(
                         userId,

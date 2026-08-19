@@ -108,4 +108,5 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     void hardDeleteUnverifiedUsers(
             @Param("threshold") Instant threshold
     );
+
 }
